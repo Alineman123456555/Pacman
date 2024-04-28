@@ -10,7 +10,7 @@ from python.config import WORLD_FILE
 
 def test_space_to_char():
     assert space_to_char(Wall()) == "X"
-    assert space_to_char(None) == " "
+    assert space_to_char(None) == "."
 
 
 def test_world_to_string():
@@ -20,9 +20,9 @@ def test_world_to_string():
     world.board = [[Wall(), Wall()], [Wall(), Wall()]]
     assert world_to_string(world) == "XX\nXX\n"
     world.board = [[None, Wall()], [Wall(), Wall()]]
-    assert world_to_string(world) == "XX\n X\n"
+    assert world_to_string(world) == "XX\n.X\n"
     world.board = [[Wall(), None], [Wall(), Wall()]]
-    assert world_to_string(world) == "XX\nX \n"
+    assert world_to_string(world) == "XX\nX.\n"
 
 
 def test_render_world(pytester):
@@ -34,7 +34,7 @@ def test_render_world(pytester):
     render_world(world)
     with open(world_file, "r") as f:
         result = f.read()
-    assert result == "  \n  \n"
+    assert result == "..\n..\n"
 
     world.board = [[Wall(), Wall()], [Wall(), Wall()]]
     render_world(world)

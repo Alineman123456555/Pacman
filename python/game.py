@@ -2,8 +2,8 @@ import logging
 from typing import Dict, List
 from time import sleep
 
-from python.entity import Entity, Wall, Player
-from python.world import World
+from python.entity import Entity, Wall, Player, DynamicEntity
+from python.world import World, gen_empty_board
 from python.config import WORLD_FILE
 from python.direction import Direction
 from python.coordinate import Coordinate
@@ -11,7 +11,7 @@ import python.config as config
 
 logger = logging.getLogger(__name__)
 
-ENTITY_TO_CHAR: Dict[Entity, str] = {type(None): " ", Wall: "X", Player: "0"}
+ENTITY_TO_CHAR: Dict[Entity, str] = {type(None): ".", Wall: "X", Player: "0"}
 
 
 def space_to_char(space: Entity):
@@ -116,6 +116,11 @@ def play_game(world: World):
 
         # All DynamicEntities move
         #   New positions are stored in the tmp_board
+        tmp_board: List[List[List[Entity]]] = gen_empty_board(
+            # TODO: Improve how this call works for generating a temp board :(
+            Coordinate(len(world.board), len(world.board[0])),
+            list().copy,
+        )
         # Check the game state
         #   Check game_over
         #   Delete things update world.board
@@ -127,9 +132,15 @@ def play_game(world: World):
             # TODO: Add is_valid_move(new_coords)
             #   Maybe old coords should also be passed to is_valid_move?
             if is_valid_move(world, new_coords):
-                world.move_entity(dyent, new_coords)
+                tmp_board[new_coords.x][new_coords.y].append(dyent)
             else:
                 logging.info(f"Can't move entity, to {new_coords}")
             # TODO: This should store the entity in the tmp_board
 
-        # tmp = not tmp
+        # Update board
+        # TODO: Refactor
+        for x, row in enumerate(tmp_board):
+            for y, entity_list in enumerate(row):
+                for entity in entity_list:
+                    if isinstance(entity, DynamicEntity):
+                        world.move_entity(entity, Coordinate(x, y))

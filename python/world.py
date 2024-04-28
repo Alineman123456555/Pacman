@@ -1,15 +1,23 @@
-from typing import List, Tuple, Set
+import logging
+from typing import List, Tuple, Set, Callable
 from python.coordinate import Coordinate
 
 from python.entity import Entity, DynamicEntity, Wall
+
+logger = logging.getLogger(__name__)
 
 EMPTY_2X2_BOARD = [[None] * 2] * 2
 EMPTY_4X4_BOARD = [[None] * 4] * 4
 EMPTY_5X5_BOARD = [[None] * 5] * 5
 
 
-def gen_empty_board(size: Coordinate, default_entity: Entity = None):
-    return [[default_entity] * size.y for _ in range(size.x)]
+def gen_empty_board(
+    size: Coordinate, default_entity: Callable[[], Entity] = lambda: None
+):
+    # TODO: Refactor so this is cleaner :(
+    #   I don't like how the default_entity is created
+    #   Maybe call it a default_entity generator? (factory???)
+    return [[default_entity() for _ in range(size.y)] for _ in range(size.x)]
 
 
 class World:
@@ -36,5 +44,6 @@ class World:
         self.board[coord.x][coord.y] = None
 
     def move_entity(self, entity: DynamicEntity, new_coords: Coordinate):
+        logger.debug(f"Moving entity to coords: {new_coords}")
         self.remove_entity(entity.coords)
         self.place_entity(entity, new_coords)
