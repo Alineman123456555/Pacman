@@ -27,6 +27,7 @@ class World:
         """
         self.board: List[List[Entity]] = gen_empty_board(size)
         self.dynamic_entities: Set[DynamicEntity] = set()
+        # TODO: Move dynamic_entities to game class
 
     def get_surroundings(self, coord: Coordinate):
         # TODO: Implement

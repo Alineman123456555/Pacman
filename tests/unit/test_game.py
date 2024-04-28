@@ -1,7 +1,7 @@
 import pytest
 import os
 
-from python.game import space_to_char, world_to_string, render_world
+from python.game import space_to_char, world_to_string, render_world, Game
 from python.coordinate import Coordinate
 from python.entity import Wall
 from python.world import World
@@ -41,3 +41,13 @@ def test_render_world(pytester):
     with open(world_file, "r") as f:
         result = f.read()
     assert result == "XX\nXX\n"
+
+
+def test_Game__init__():
+    game = Game()
+    assert game._world.board == []
+    assert game._score == 0
+
+    world = World(Coordinate(2, 2))
+    game = Game(world)
+    assert game._world.board == [[None, None], [None, None]]

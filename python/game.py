@@ -100,25 +100,38 @@ def is_valid_move(world: World, coord: Coordinate):
         return True
 
 
-def play_game(world: World):
-    game_over = False
-    tick_time = 1
-    tmp = False
-    player = get_player(world)
-    while not game_over:
-        render_world(world)
-        sleep(tick_time)
+class Game:
+    def __init__(self, world: World = World(Coordinate(0, 0))) -> None:
+        self._world = world
+        self._score = 0
+        self._player = None
 
+    def add_player(self, player: Player, coord: Coordinate):
+        self._world.place_entity(player, coord)
+        self._player = player
+
+    def play_game(self):
+        game_over = False
+        tick_time = 1
+        player = get_player(self._world)
+        while not game_over:
+            render_world(self._world)
+            sleep(tick_time)
+            input = get_input()
+            self._tick(player, input)
+
+    def _tick(self, player: Player, input):
         # Get input from controller (cli)
         # Async??
-        update_player_velocity(player, DIRECTION_BINDS[get_input()])
+        update_player_velocity(player, DIRECTION_BINDS[input])
         # Create empty tmp_board with List[Entity] spaces
 
         # All DynamicEntities move
         #   New positions are stored in the tmp_board
         tmp_board: List[List[List[Entity]]] = gen_empty_board(
+            # TODO: This tmp_board needs to include interactables -_-
             # TODO: Improve how this call works for generating a temp board :(
-            Coordinate(len(world.board), len(world.board[0])),
+            Coordinate(len(self._world.board), len(self._world.board[0])),
             list().copy,
         )
         # Check the game state
@@ -126,21 +139,24 @@ def play_game(world: World):
         #   Delete things update world.board
 
         # Move all DynamicEntities
-        for dyent in world.dynamic_entities:
+        for dyent in self._world.dynamic_entities:
             print(dyent)
             new_coords = dyent.gen_move(None)
             # TODO: Add is_valid_move(new_coords)
             #   Maybe old coords should also be passed to is_valid_move?
-            if is_valid_move(world, new_coords):
+            if is_valid_move(self._world, new_coords):
                 tmp_board[new_coords.x][new_coords.y].append(dyent)
             else:
-                logging.info(f"Can't move entity, to {new_coords}")
+                logger.info(f"Can't move entity, to {new_coords}")
             # TODO: This should store the entity in the tmp_board
 
         # Update board
         # TODO: Refactor
+        self._update_world(tmp_board)
+
+    def _update_world(self, tmp_board):
         for x, row in enumerate(tmp_board):
             for y, entity_list in enumerate(row):
                 for entity in entity_list:
                     if isinstance(entity, DynamicEntity):
-                        world.move_entity(entity, Coordinate(x, y))
+                        self._world.move_entity(entity, Coordinate(x, y))
