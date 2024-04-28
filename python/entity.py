@@ -1,19 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Tuple, List
-from dataclasses import dataclass
+from python.coordinate import Coordinate
 
 from python.direction import Direction
-
-
-@dataclass
-class Coordinate:
-    x: int
-    y: int
-
-    def __add__(self, other: "Coordinate"):
-        n_x = self.x + other.x
-        n_y = self.y + other.y
-        return Coordinate(n_x, n_y)
 
 
 class Entity(ABC):
@@ -49,19 +38,19 @@ class DynamicEntity(Entity):
 
 
 class Player(DynamicEntity):
-    def __init__(self):
+    def __init__(self, coords: Coordinate = None):
         # TODO: Add coords to init parameters
         self.direction: Direction = Direction.NONE
-        self.coords: Tuple[int, int] = None
+        self.coords: Coordinate = coords
 
     # TODO: Decide if getters and setters
     #   Makes it easier to avoid AttributeErrors
     # Maybe I should just init entities at (0, 0)
     # or just add a coord to the init
 
-    def gen_move(self, surroundings: Tuple[List[Entity]]) -> Tuple[int]:
+    def gen_move(self, surroundings: Tuple[List[Entity]]) -> Coordinate:
         # TODO: Figure out if you need to use surroundsing to generate the move.
-        return self.coords + self.direction
+        return self.coords + self.direction.value
 
 
 class StaticEntity(Entity):

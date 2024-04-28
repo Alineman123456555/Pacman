@@ -2,6 +2,7 @@ import pytest
 import os
 
 from python.game import space_to_char, world_to_string, render_world
+from python.coordinate import Coordinate
 from python.entity import Wall
 from python.world import World
 from python.config import WORLD_FILE
@@ -13,7 +14,7 @@ def test_space_to_char():
 
 
 def test_world_to_string():
-    world = World()
+    world = World(Coordinate(2, 2))
 
     # Check that world coords are displayed correctly
     world.board = [[Wall(), Wall()], [Wall(), Wall()]]
@@ -29,7 +30,7 @@ def test_render_world(pytester):
     os.chdir(tempdir)
     world_file = os.path.abspath(WORLD_FILE)
 
-    world = World()
+    world = World(Coordinate(2, 2))
     render_world(world)
     with open(world_file, "r") as f:
         result = f.read()
