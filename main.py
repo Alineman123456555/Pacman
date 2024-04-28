@@ -2,8 +2,8 @@ import logging
 from time import sleep
 
 from python.coordinate import Coordinate
-from python.entity import Wall, Player, SmallDot
-from python.world import World, EMPTY_5X5_BOARD
+from python.entity import Wall, Player, SmallDot, DumbGhost
+from python.world import World
 from python.direction import Direction
 from python.game import Game
 from python.controller import render_game, get_input
@@ -11,12 +11,35 @@ import python.config as config
 
 logging.basicConfig(level=logging.DEBUG)
 
+logger = logging.getLogger(__name__)
+
+
+def create_wall(world: World, start: Coordinate, end: Coordinate):
+    logger.debug(f"Creating wall start: {start}, end: {end}")
+    for x in range(start.x, end.x + 1):
+        for y in range(start.y, end.y + 1):
+            logger.debug(f"Creating wall at x: {x}, y: {y}")
+            world.board[x][y] = Wall()
+
 
 def create_world():
     # TODO: Move to world?
-    world = World(Coordinate(10, 10))
-    world.board[5][5] = Wall()
+    world = World(Coordinate(40, 100))
+
+    # Left wall
+    create_wall(world, Coordinate(5, 5), Coordinate(5, 9))
+
+    # Right wall
+    create_wall(world, Coordinate(10, 5), Coordinate(10, 9))
+
+    # Bottom wall
+    create_wall(world, Coordinate(6, 5), Coordinate(9, 5))
+
+    # Top wall
+    create_wall(world, Coordinate(6, 9), Coordinate(9, 9))
+
     world.board[3][7] = SmallDot()
+
     return world
 
 
@@ -28,6 +51,7 @@ def create_game():
     # Create Game
     game = Game(world)
     game.add_player(Player(), Coordinate(2, 2))
+    game.add_dynamic_entity(DumbGhost(Direction.UP), Coordinate(7, 7))
 
     return game
 
@@ -40,7 +64,6 @@ def restart_game(game: Game = GAME):
     #   And rename to something like
     #   set_game_state?
     game._world = create_world()
-    game._dynamic_entities = set()
     game.add_player(Player(), Coordinate(2, 2))
     game._score = 0
 

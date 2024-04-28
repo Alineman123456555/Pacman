@@ -26,7 +26,7 @@ def test_place_entity():
     player = Player()
     world = World(Coordinate(3, 3))
 
-    world.place_entity(player, Coordinate(1, 1))
+    world.place_dynamic_entity(player, Coordinate(1, 1))
     assert world.board == [
         [None, None, None],
         [None, player, None],

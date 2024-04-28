@@ -27,59 +27,50 @@ class Game:
         self._world = world
         self._score = 0
         self._player = None
-        self._dynamic_entities: Set[DynamicEntity] = set()
 
     def add_player(self, player: Player, coord: Coordinate):
-        self._world.place_entity(player, coord)
+        self._world.place_dynamic_entity(player, coord)
         self._player = player
-        self._dynamic_entities.add(player)
+
+    def add_dynamic_entity(self, entity: Entity, coord: Coordinate):
+        self._world.place_dynamic_entity(entity, coord)
 
     def _tick(self, input):
         # Get input from controller (cli)
         # Async??
-        self._update_player_velocity(DIRECTION_BINDS[input])
-        # TODO: Handle KeyError
-        # Create empty tmp_board with List[Entity] spaces
+        try:
+            self._update_player_velocity(DIRECTION_BINDS[input])
+        except KeyError:
+            logger.warning(f"Unknown Direction Keybind: {input}")
 
-        # All DynamicEntities move
-        #   New positions are stored in the tmp_board
+        # All things move on this board first
         tmp_board: List[List[Set[Entity]]] = gen_empty_board(
-            # TODO: This tmp_board needs to include interactables -_-
             # TODO: Improve how this call works for generating a temp board :(
             Coordinate(len(self._world.board), len(self._world.board[0])),
             set().copy,
         )
 
         # Move all Entities
-        for old_coords, ent in World.enumerate_board(self._world.board):
-            logging.debug(f"Ent {ent}")
-            new_coords = old_coords
-            if isinstance(ent, DynamicEntity):
-                new_coords = ent.gen_move(None)
-                if not self._is_valid_move(new_coords):
-                    logger.info(f"Can't move entity, to {new_coords}")
-                    new_coords = old_coords
-            tmp_board[new_coords.x][new_coords.y].add(ent)
+        self._move_entities(tmp_board)
 
-        # for dyent in self._dynamic_entities:
-
-        #     new_coords = dyent.gen_move(None)
-        #     # TODO: Add is_valid_move(new_coords)
-        #     #   Maybe old coords should also be passed to is_valid_move?
-        #     if self._is_valid_move(new_coords):
-        #         tmp_board[new_coords.x][new_coords.y].append(dyent)
-        #     else:
-        #         logger.info(f"Can't move entity, to {new_coords}")
-        #     # TODO: This should store the entity in the tmp_board
-
-        # Check game state
-        #   Check game_over
-        #   Delete things update world.board
-        # self.
+        # Perform actions for entities on same spot
         self._interact_entities(tmp_board)
 
         # Update board
         self._update_world(tmp_board)
+
+    def _move_entities(self, tmp_board: List[List[List[Entity]]]):
+        for old_coords, ent in World.enumerate_board(self._world.board):
+            logging.debug(f"Ent {ent}")
+            new_coords = old_coords
+            if isinstance(ent, DynamicEntity):
+
+                # TODO: Add get_surroundings()
+                new_coords = ent.gen_move(self._world.get_surroundings(old_coords))
+                if not self._is_valid_move(new_coords):
+                    logger.info(f"Can't move entity, to {new_coords}")
+                    new_coords = old_coords
+            tmp_board[new_coords.x][new_coords.y].add(ent)
 
     def _update_player_velocity(self, direction: Direction):
         self._player.direction = direction
@@ -136,4 +127,6 @@ class Game:
         for coords, entity_list in World.enumerate_board(tmp_board):
             for entity in entity_list:
                 if isinstance(entity, DynamicEntity):
-                    self._world.move_entity(entity, Coordinate(coords.x, coords.y))
+                    self._world.move_dynamic_entity(
+                        entity, Coordinate(coords.x, coords.y)
+                    )

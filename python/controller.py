@@ -6,7 +6,7 @@ Taking input from stdin
 import logging
 from typing import Dict
 
-from python.entity import Entity, Wall, Player, SmallDot
+from python.entity import Entity, Wall, Player, SmallDot, DumbGhost
 from python.world import World
 from python.game import Game
 import python.config as config
@@ -18,6 +18,15 @@ ENTITY_TO_CHAR: Dict[Entity, str] = {
     Wall: "X",
     Player: "0",
     SmallDot: "-",
+    DumbGhost: "G",
+}
+
+CHAR_TO_ENTITY: Dict[Entity, str] = {
+    ".": type(None),
+    "X": Wall,
+    "0": Player,
+    "-": SmallDot,
+    "G": DumbGhost,
 }
 
 

@@ -18,7 +18,10 @@ class DynamicEntity(Entity):
     def gen_move(
         self,
         surroundings: Tuple[
-            List["Entity"], List["Entity"], List["Entity"], List["Entity"]
+            Entity,
+            Entity,
+            Entity,
+            Entity,
         ],
     ) -> Coordinate:
         """Generates a move
@@ -38,7 +41,6 @@ class DynamicEntity(Entity):
 
 class Player(DynamicEntity):
     def __init__(self, coords: Coordinate = None):
-        # TODO: Add coords to init parameters
         self.direction: Direction = Direction.NONE
         self.coords: Coordinate = coords
 
@@ -47,8 +49,48 @@ class Player(DynamicEntity):
     # Maybe I should just init entities at (0, 0)
     # or just add a coord to the init
 
-    def gen_move(self, surroundings: Tuple[List[Entity]]) -> Coordinate:
+    def gen_move(
+        self,
+        surroundings: Tuple[
+            Entity,
+            Entity,
+            Entity,
+            Entity,
+        ],
+    ) -> Coordinate:
         # TODO: Figure out if you need to use surroundsing to generate the move.
+        return self.coords + self.direction.value
+
+
+class Ghost(DynamicEntity):
+    pass
+
+
+class DumbGhost(Ghost):
+    def __init__(self, direction: Direction, coords: Coordinate = None):
+        self.direction: Direction = direction
+        self.coords: Coordinate = coords
+
+    def gen_move(
+        self,
+        surroundings: Tuple[
+            Entity,
+            Entity,
+            Entity,
+            Entity,
+        ],
+    ) -> Coordinate:
+        # TODO: make logic check all 4 direction no matter what the starting direction is.
+        right, left, up, down = surroundings
+        if self.direction == Direction.RIGHT and isinstance(right, Wall):
+            self.direction = Direction.DOWN
+        if self.direction == Direction.DOWN and isinstance(down, Wall):
+            self.direction = Direction.LEFT
+        if self.direction == Direction.LEFT and isinstance(left, Wall):
+            self.direction = Direction.UP
+        if self.direction == Direction.UP and isinstance(up, Wall):
+            self.direction = Direction.RIGHT
+
         return self.coords + self.direction.value
 
 
