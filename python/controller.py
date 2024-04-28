@@ -23,7 +23,6 @@ def get_input() -> str:
 
 
 def space_to_char(space: Entity):
-    # TODO: Move to controller
     # TODO: I don't like that spaces are lists
     #   There should only ever really be a single
     #   entity in a space at the end of a tick.
@@ -36,7 +35,6 @@ def space_to_char(space: Entity):
 
 
 def world_to_string(world: World) -> str:
-    # TODO: Move to controller
     # TODO: Probably move to World class
     # Yeah it would be nice for testing? Wait no?
     board = world.board
