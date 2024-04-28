@@ -2,11 +2,11 @@ import logging
 from time import sleep
 
 from python.coordinate import Coordinate
-from python.entity import Wall, Player
+from python.entity import Wall, Player, SmallDot
 from python.world import World, EMPTY_5X5_BOARD
 from python.direction import Direction
 from python.game import Game
-from python.controller import render_world, get_input
+from python.controller import render_game, get_input
 import python.config as config
 
 logging.basicConfig(level=logging.DEBUG)
@@ -16,6 +16,7 @@ def create_world():
     # TODO: Move to world?
     world = World(Coordinate(10, 10))
     world.board[5][5] = Wall()
+    world.board[3][7] = SmallDot()
     return world
 
 
@@ -41,6 +42,7 @@ def restart_game(game: Game = GAME):
     game._world = create_world()
     game._dynamic_entities = set()
     game.add_player(Player(), Coordinate(2, 2))
+    game._score = 0
 
 
 NONGAME_BINDS = {
@@ -54,7 +56,7 @@ def play_game(game: Game):
     game_over = False
     tick_time = 0.25
     while not game_over:
-        render_world(game._world)
+        render_game(game)
         sleep(tick_time)
         input = get_input()
         try:

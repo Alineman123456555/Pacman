@@ -6,8 +6,7 @@ from python.direction import Direction
 
 
 class Entity(ABC):
-    def __init__(self):
-        raise NotImplementedError
+    pass
 
 
 class DynamicEntity(Entity):
@@ -54,14 +53,27 @@ class Player(DynamicEntity):
 
 
 class StaticEntity(Entity):
-    def __init__(self):
-        raise NotImplementedError
+    pass
 
 
 class Wall(StaticEntity):
     def __init__(self):
         # TODO: Figure out if something needs to be here
         pass
+
+
+class Interactable(StaticEntity):
+    @property
+    @abstractmethod
+    def value(self):
+        """The score value of the interactible"""
+        raise NotImplementedError
+
+
+class SmallDot(Interactable):
+    @property
+    def value(self):
+        return 100
 
 
 class GhostSpawn(StaticEntity):

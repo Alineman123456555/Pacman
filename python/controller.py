@@ -6,13 +6,19 @@ Taking input from stdin
 import logging
 from typing import Dict
 
-from python.entity import Entity, Wall, Player
+from python.entity import Entity, Wall, Player, SmallDot
 from python.world import World
+from python.game import Game
 import python.config as config
 
 logger = logging.getLogger(__name__)
 
-ENTITY_TO_CHAR: Dict[Entity, str] = {type(None): ".", Wall: "X", Player: "0"}
+ENTITY_TO_CHAR: Dict[Entity, str] = {
+    type(None): ".",
+    Wall: "X",
+    Player: "0",
+    SmallDot: "-",
+}
 
 
 def get_input() -> str:
@@ -54,3 +60,10 @@ def render_world(world: World):
     print("rendering")
     with open(config.WORLD_FILE, "w") as f:
         f.write(world_to_string(world))
+
+
+def render_game(game: Game):
+    logger.info("Rendering game")
+    with open(config.WORLD_FILE, "w") as f:
+        f.write(world_to_string(game._world))
+        f.write(f"Score: {game._score}")

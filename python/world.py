@@ -1,5 +1,5 @@
 import logging
-from typing import List, Tuple, Set, Callable
+from typing import List, Tuple, Set, Callable, Generator
 from python.coordinate import Coordinate
 
 from python.entity import Entity, DynamicEntity, Wall
@@ -47,3 +47,12 @@ class World:
         logger.debug(f"Moving entity to coords: {new_coords}")
         self.remove_entity(entity.coords)
         self.place_entity(entity, new_coords)
+
+    @classmethod
+    def enumerate_board(
+        cls, board: List[List[Entity]]
+    ) -> Generator[Tuple[Coordinate, Entity], None, None]:
+        for x, row in enumerate(board):
+            for y, entity in enumerate(row):
+                if entity:
+                    yield (Coordinate(x, y), entity)
