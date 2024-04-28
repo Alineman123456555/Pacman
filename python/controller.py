@@ -4,6 +4,7 @@ Taking input from stdin
 """
 
 import logging
+import math
 from typing import Dict
 
 from python.entity import Entity, Wall, Player, SmallDot, DumbGhost
@@ -69,6 +70,20 @@ def render_world(world: World):
     print("rendering")
     with open(config.WORLD_FILE, "w") as f:
         f.write(world_to_string(world))
+
+
+def render_gameover(game: Game):
+    world_str = world_to_string(game._world)
+    world_str = list(world_str)
+    y_len = len(game._world.board) + 1
+    x_len = len(game._world.board[0])
+    gameover = "Game over!"
+    start = math.floor((x_len * y_len / 2) + (y_len / 2))
+    for idx, char in enumerate(gameover):
+        world_str[idx + start] = char
+    with open(config.WORLD_FILE, "w") as f:
+        f.write("".join(world_str))
+        f.write(f"Score: {game._score}")
 
 
 def render_game(game: Game):

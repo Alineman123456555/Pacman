@@ -6,7 +6,7 @@ from python.entity import Wall, Player, SmallDot, DumbGhost
 from python.world import World
 from python.direction import Direction
 from python.game import Game
-from python.controller import render_game, get_input
+from python.controller import render_game, get_input, render_gameover
 import python.config as config
 
 logging.basicConfig(level=logging.DEBUG)
@@ -50,7 +50,7 @@ def create_game():
 
     # Create Game
     game = Game(world)
-    game.add_player(Player(), Coordinate(2, 2))
+    game.add_player(Player(), Coordinate(7, 8))
     game.add_dynamic_entity(DumbGhost(Direction.UP), Coordinate(7, 7))
 
     return game
@@ -85,7 +85,11 @@ def play_game(game: Game):
         try:
             NONGAME_BINDS[input](game)
         except KeyError:
-            game._tick(input)
+            if game._tick(input) != 0:
+                game_over = True
+
+    render_gameover(game)
+    exit(0)
 
 
 play_game(GAME)

@@ -2,7 +2,14 @@ import logging
 from typing import Dict, List, Set
 
 
-from python.entity import Entity, Wall, Player, DynamicEntity, SmallDot, Interactable
+from python.entity import (
+    Entity,
+    Wall,
+    Player,
+    DynamicEntity,
+    Interactable,
+    Ghost,
+)
 from python.world import World, gen_empty_board
 from python.direction import Direction
 from python.coordinate import Coordinate
@@ -35,7 +42,7 @@ class Game:
     def add_dynamic_entity(self, entity: Entity, coord: Coordinate):
         self._world.place_dynamic_entity(entity, coord)
 
-    def _tick(self, input):
+    def _tick(self, input) -> int:
         # Get input from controller (cli)
         # Async??
         try:
@@ -58,8 +65,13 @@ class Game:
 
         # Update board
         self._update_world(tmp_board)
+        if not self._player:
+            logger.error("No player!")
+            # TODO: Add respawn
+            return 1
+        return 0
 
-    def _move_entities(self, tmp_board: List[List[List[Entity]]]):
+    def _move_entities(self, tmp_board: List[List[set[Entity]]]):
         for old_coords, ent in World.enumerate_board(self._world.board):
             logging.debug(f"Ent {ent}")
             new_coords = old_coords
@@ -107,19 +119,29 @@ class Game:
                 full_entity_set.update(entity_set)
         return full_entity_set
 
-    def _interact_entities(self, tmp_board: List[List[List[Entity]]]):
+    def _interact_entities(self, tmp_board: List[List[Set[Entity]]]):
         for coords, entity_list in World.enumerate_board(tmp_board):
+            # Setup
             class_dict: Dict[type, Set] = {}
             for entity in entity_list:
                 class_dict.setdefault(entity.__class__, set())
                 class_dict[entity.__class__].add(entity)
 
+            # Player Interactable interaction
             if self._dict_has(class_dict, Interactable) and self._dict_has(
                 class_dict, Player
             ):
                 interactable: Interactable
                 for interactable in self._dict_get(class_dict, Interactable):
                     self._score += interactable.value
+
+            # Player Ghost interaction
+            if self._dict_has(class_dict, Ghost) and self._dict_has(class_dict, Player):
+                # TODO: Add player eat mode.
+                for player in self._dict_get(class_dict, Player):
+                    if player == self._player:
+                        self._player = None
+                        tmp_board[coords.x][coords.y].remove(player)
 
         # TODO: Add game logic for entity interactions
 
