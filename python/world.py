@@ -26,7 +26,7 @@ class World:
         Bottom left is the start of the board.
         """
         self.board: List[List[Entity]] = gen_empty_board(size)
-        self.dynamic_entities: Set[DynamicEntity] = set()
+
         # TODO: Move dynamic_entities to game class
 
     def get_surroundings(self, coord: Coordinate):
@@ -39,7 +39,6 @@ class World:
     def place_entity(self, entity: DynamicEntity, coord: Coordinate):
         self.board[coord.x][coord.y] = entity
         entity.coords = coord
-        self.dynamic_entities.add(entity)
 
     def remove_entity(self, coord: Coordinate):
         self.board[coord.x][coord.y] = None
