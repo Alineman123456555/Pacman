@@ -1,8 +1,11 @@
+import logging
 from abc import ABC, abstractmethod
 from typing import Tuple, List
 from python.coordinate import Coordinate
 
 from python.direction import Direction
+
+logger = logging.getLogger(__name__)
 
 
 class Entity(ABC):
@@ -60,6 +63,32 @@ class Player(DynamicEntity):
     ) -> Coordinate:
         # TODO: Figure out if you need to use surroundsing to generate the move.
         return self.coords + self.direction.value
+
+
+class EatModePlayer(Player):
+    def __init__(self, num_ticks: int, coords: Coordinate = None):
+        """This class is a player, but interacts differently with Ghosts.
+        Parameters
+        ----------
+        num_ticks: int
+            The number of ticks this player should exist.
+            Every gen_move() this is decremented
+        """
+        self._num_ticks = num_ticks
+        super().__init__(coords)
+
+    def gen_move(
+        self,
+        surroundings: Tuple[
+            Entity,
+            Entity,
+            Entity,
+            Entity,
+        ],
+    ) -> Coordinate:
+        self._num_ticks -= 1
+        logger.debug(f"EatModePlayer num_ticks remaining: {self._num_ticks}")
+        return super().gen_move(surroundings)
 
 
 class Ghost(DynamicEntity):

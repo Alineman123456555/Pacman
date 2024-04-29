@@ -6,8 +6,10 @@ from python.entity import Player
 
 
 def test_gen_empty_board():
-    # TODO: Implement?
-    pass
+    with pytest.raises(ValueError):
+        gen_empty_board(Coordinate(0, 0))
+
+    assert gen_empty_board(Coordinate(2, 1)) == [[None], [None]]
 
 
 def test_world__init__():

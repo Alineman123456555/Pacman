@@ -5,9 +5,9 @@ Taking input from stdin
 
 import logging
 import math
-from typing import Dict
+from typing import Dict, List
 
-from python.entity import Entity, Wall, Player, SmallDot, DumbGhost
+from python.entity import Entity, Wall, Player, SmallDot, DumbGhost, EatModePlayer
 from python.world import World
 from python.game import Game
 import python.config as config
@@ -17,17 +17,19 @@ logger = logging.getLogger(__name__)
 ENTITY_TO_CHAR: Dict[Entity, str] = {
     type(None): ".",
     Wall: "X",
-    Player: "0",
+    Player: "O",
     SmallDot: "-",
     DumbGhost: "G",
+    EatModePlayer: "0",
 }
 
 CHAR_TO_ENTITY: Dict[Entity, str] = {
     ".": type(None),
     "X": Wall,
-    "0": Player,
+    "O": Player,
     "-": SmallDot,
     "G": DumbGhost,
+    "0": EatModePlayer,
 }
 
 
@@ -54,13 +56,13 @@ def world_to_string(world: World) -> str:
     # TODO: Probably move to World class
     # Yeah it would be nice for testing? Wait no?
     board = world.board
-    world_str = ""
-    for row in reversed(board):
-        for space in row:
-            world_str += space_to_char(space)
-        world_str += "\n"
 
-    return world_str
+    y_str_list = [""] * len(board[0])
+    for column in board:
+        for yidx, space in enumerate(reversed(column)):
+            y_str_list[yidx] += space_to_char(space)
+
+    return "\n".join(y_str_list) + "\n"
 
 
 def render_world(world: World):
@@ -74,20 +76,29 @@ def render_world(world: World):
 
 def render_gameover(game: Game):
     world_str = world_to_string(game._world)
+
+    # Overwrite chars with gameover
     world_str = list(world_str)
-    y_len = len(game._world.board) + 1
-    x_len = len(game._world.board[0])
+    x_len = len(game._world.board) + 1
+    y_len = len(game._world.board[0])
     gameover = "Game over!"
-    start = math.floor((x_len * y_len / 2) + (y_len / 2))
+    start = (x_len * y_len // 2) + (y_len // 2) - len(gameover) // 2
     for idx, char in enumerate(gameover):
         world_str[idx + start] = char
+    world_str = "".join(world_str)
+
+    # Render
     with open(config.WORLD_FILE, "w") as f:
-        f.write("".join(world_str))
-        f.write(f"Score: {game._score}")
+        f.write(world_str)
+        f.write(f"Score: {game._score}\n")
 
 
 def render_game(game: Game):
     logger.info("Rendering game")
     with open(config.WORLD_FILE, "w") as f:
         f.write(world_to_string(game._world))
-        f.write(f"Score: {game._score}")
+        f.write(f"Score: {game._score}\n")
+
+
+def load_board(filename: str) -> List[List[Entity]]:
+    pass

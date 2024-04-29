@@ -18,11 +18,14 @@ def gen_empty_board(
     # TODO: Refactor so this is cleaner :(
     #   I don't like how the default_entity is created
     #   Maybe call it a default_entity generator? (factory???)
+    #
+    if size.x < 1 or size.y < 1:
+        raise ValueError(f"gen_empty_board size must be greater than 0, size {size}")
     return [[default_entity() for _ in range(size.y)] for _ in range(size.x)]
 
 
 class World:
-    def __init__(self, size: Coordinate):
+    def __init__(self, size: Coordinate = Coordinate(1, 1)):
         """
         Bottom left is the start of the board.
         """

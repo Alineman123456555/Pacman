@@ -2,7 +2,7 @@ import logging
 from time import sleep
 
 from python.coordinate import Coordinate
-from python.entity import Wall, Player, SmallDot, DumbGhost
+from python.entity import Wall, Player, SmallDot, DumbGhost, EatModePlayer
 from python.world import World
 from python.direction import Direction
 from python.game import Game
@@ -24,7 +24,7 @@ def create_wall(world: World, start: Coordinate, end: Coordinate):
 
 def create_world():
     # TODO: Move to world?
-    world = World(Coordinate(40, 100))
+    world = World(Coordinate(100, 40))
 
     # Left wall
     create_wall(world, Coordinate(5, 5), Coordinate(5, 9))
@@ -50,7 +50,8 @@ def create_game():
 
     # Create Game
     game = Game(world)
-    game.add_player(Player(), Coordinate(7, 8))
+    # game.add_player(Player(), Coordinate(7, 8))
+    game.add_player(EatModePlayer(10), Coordinate(7, 8))
     game.add_dynamic_entity(DumbGhost(Direction.UP), Coordinate(7, 7))
 
     return game
@@ -64,7 +65,8 @@ def restart_game(game: Game = GAME):
     #   And rename to something like
     #   set_game_state?
     game._world = create_world()
-    game.add_player(Player(), Coordinate(2, 2))
+    game.add_player(EatModePlayer(10), Coordinate(7, 8))
+    game.add_dynamic_entity(DumbGhost(Direction.UP), Coordinate(7, 7))
     game._score = 0
 
 

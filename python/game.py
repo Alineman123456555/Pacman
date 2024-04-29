@@ -30,7 +30,7 @@ DIRECTION_BINDS = {
 
 
 class Game:
-    def __init__(self, world: World = World(Coordinate(0, 0))) -> None:
+    def __init__(self, world: World = World(Coordinate(1, 1))) -> None:
         self._world = world
         self._score = 0
         self._player = None
@@ -75,9 +75,8 @@ class Game:
         for old_coords, ent in World.enumerate_board(self._world.board):
             logging.debug(f"Ent {ent}")
             new_coords = old_coords
-            if isinstance(ent, DynamicEntity):
 
-                # TODO: Add get_surroundings()
+            if isinstance(ent, DynamicEntity):
                 new_coords = ent.gen_move(self._world.get_surroundings(old_coords))
                 if not self._is_valid_move(new_coords):
                     logger.info(f"Can't move entity, to {new_coords}")

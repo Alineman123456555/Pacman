@@ -7,9 +7,9 @@ from python.coordinate import Coordinate
 
 class Direction(Enum):
     # Defines the coordinate direction
-    RIGHT = Coordinate(0, 1)
-    LEFT = Coordinate(0, -1)
-    UP = Coordinate(1, 0)
-    DOWN = Coordinate(-1, 0)
+    UP = Coordinate(0, 1)
+    DOWN = Coordinate(0, -1)
+    RIGHT = Coordinate(1, 0)
+    LEFT = Coordinate(-1, 0)
     NONE = Coordinate(0, 0)
     # TODO: Add succ and pred functions?
