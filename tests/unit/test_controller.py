@@ -13,7 +13,7 @@ from python.coordinate import Coordinate
 from python.game import Game
 from python.world import World, gen_empty_board
 from python.entity import Wall, Player, SmallDot
-from python.config import WORLD_FILE
+from python.config import RENDER_FILE
 
 
 def test_space_to_char():
@@ -39,7 +39,7 @@ def test_world_to_string():
 def test_render_world(pytester):
     tempdir = pytester.path
     os.chdir(tempdir)
-    world_file = os.path.abspath(WORLD_FILE)
+    world_file = os.path.abspath(RENDER_FILE)
 
     world = World(Coordinate(2, 2))
     render_world(world)
@@ -57,7 +57,7 @@ def test_render_world(pytester):
 def test_render_gameover(pytester):
     tempdir = pytester.path
     os.chdir(tempdir)
-    world_file = os.path.abspath(WORLD_FILE)
+    world_file = os.path.abspath(RENDER_FILE)
     world = World()
     game = Game(world)
     with pytest.raises(IndexError):
@@ -73,7 +73,7 @@ def test_render_gameover(pytester):
 def test_render_game(pytester):
     tempdir = pytester.path
     os.chdir(tempdir)
-    world_file = os.path.abspath(WORLD_FILE)
+    world_file = os.path.abspath(RENDER_FILE)
     world = World()
     game = Game(world)
     render_game(game)

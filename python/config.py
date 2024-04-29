@@ -1,5 +1,6 @@
 # World file location
-WORLD_FILE = "./world.txt"
+RENDER_FILE = "./world.txt"
+WORLD_FILE = "./worlds/world_1.txt"
 
 # Game Binds
 # Movement

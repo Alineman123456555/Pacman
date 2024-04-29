@@ -6,7 +6,7 @@ from python.entity import Wall, Player, SmallDot, DumbGhost, EatModePlayer
 from python.world import World
 from python.direction import Direction
 from python.game import Game
-from python.controller import render_game, get_input, render_gameover
+from python.controller import render_game, get_input, render_gameover, load_board
 import python.config as config
 
 logging.basicConfig(level=logging.DEBUG)
@@ -46,13 +46,12 @@ def create_world():
 def create_game():
     # TODO: Move to game
     # Build World
-    world = create_world()
+    world = World()
+    world.board = load_board(config.WORLD_FILE)
 
     # Create Game
     game = Game(world)
-    # game.add_player(Player(), Coordinate(7, 8))
-    game.add_player(EatModePlayer(10), Coordinate(7, 8))
-    game.add_dynamic_entity(DumbGhost(Direction.UP), Coordinate(7, 7))
+    game._player = world.find_player()
 
     return game
 

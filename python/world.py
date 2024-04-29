@@ -2,7 +2,7 @@ import logging
 from typing import List, Tuple, Set, Callable, Generator
 from python.coordinate import Coordinate
 
-from python.entity import Entity, DynamicEntity, Wall
+from python.entity import Entity, DynamicEntity, Wall, Player
 from python.direction import Direction
 
 logger = logging.getLogger(__name__)
@@ -54,6 +54,12 @@ class World:
         logger.debug(f"Moving entity to coords: {new_coords}")
         self.remove_entity(entity.coords)
         self.place_dynamic_entity(entity, new_coords)
+
+    def find_player(self) -> Player:
+        """Finds the first player in the board"""
+        for _, entity in World.enumerate_board(self.board):
+            if isinstance(entity, Player):
+                return entity
 
     @classmethod
     def enumerate_board(

@@ -96,7 +96,7 @@ class Ghost(DynamicEntity):
 
 
 class DumbGhost(Ghost):
-    def __init__(self, direction: Direction, coords: Coordinate = None):
+    def __init__(self, direction: Direction = Direction.UP, coords: Coordinate = None):
         self.direction: Direction = direction
         self.coords: Coordinate = coords
 

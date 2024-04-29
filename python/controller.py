@@ -7,7 +7,15 @@ import logging
 
 from typing import Dict, List
 
-from python.entity import Entity, Wall, Player, SmallDot, DumbGhost, EatModePlayer
+from python.entity import (
+    Entity,
+    Wall,
+    Player,
+    SmallDot,
+    DumbGhost,
+    EatModePlayer,
+    DynamicEntity,
+)
 from python.world import World, gen_empty_board
 from python.game import Game
 from python.coordinate import Coordinate
@@ -63,7 +71,7 @@ def render_world(world: World):
     # File renderer
     # NOTE: Other renderers might need to remove the old output before new is output
     print("rendering")
-    with open(config.WORLD_FILE, "w") as f:
+    with open(config.RENDER_FILE, "w") as f:
         f.write(world_to_string(world))
 
 
@@ -81,14 +89,14 @@ def render_gameover(game: Game):
     world_str = "".join(world_str)
 
     # Render
-    with open(config.WORLD_FILE, "w") as f:
+    with open(config.RENDER_FILE, "w") as f:
         f.write(world_str)
         f.write(f"Score: {game._score}\n")
 
 
 def render_game(game: Game):
     logger.info("Rendering game")
-    with open(config.WORLD_FILE, "w") as f:
+    with open(config.RENDER_FILE, "w") as f:
         f.write(world_to_string(game._world))
         f.write(f"Score: {game._score}\n")
 
@@ -108,6 +116,9 @@ def load_board(filename: str) -> List[List[Entity]]:
         logger.debug(f"Row: '{row}', len: {len(row)}")
         for xidx, char in enumerate(row):
             logger.debug(f"Loading char: {char}, xidx: {xidx}, yidx: {yidx}")
-            board[xidx][yidx] = CHAR_TO_ENTITY[char]()
+            entity = CHAR_TO_ENTITY[char]()
+            if isinstance(entity, DynamicEntity):
+                entity.coords = Coordinate(xidx, yidx)
+            board[xidx][yidx] = entity
 
     return board
