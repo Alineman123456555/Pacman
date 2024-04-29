@@ -7,11 +7,12 @@ from python.controller import (
     render_world,
     render_gameover,
     render_game,
+    load_board,
 )
 from python.coordinate import Coordinate
 from python.game import Game
 from python.world import World, gen_empty_board
-from python.entity import Wall
+from python.entity import Wall, Player, SmallDot
 from python.config import WORLD_FILE
 
 
@@ -79,3 +80,20 @@ def test_render_game(pytester):
     with open(world_file, "r") as f:
         result = f.read()
     assert result == ".\nScore: 0\n"
+
+
+def test_load_board(pytester):
+    tempdir = pytester.path
+
+    world_file = os.path.join(tempdir, "world_file.txt")
+    with open(world_file, "w") as f:
+        f.write(".-.\n" "OX.\n")
+
+    board = load_board(world_file)
+
+    assert isinstance(board[0][0], Player)
+    assert isinstance(board[1][0], Wall)
+    assert board[2][0] is None
+    assert board[0][1] is None
+    assert isinstance(board[1][1], SmallDot)
+    assert board[2][1] is None

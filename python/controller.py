@@ -4,12 +4,13 @@ Taking input from stdin
 """
 
 import logging
-import math
+
 from typing import Dict, List
 
 from python.entity import Entity, Wall, Player, SmallDot, DumbGhost, EatModePlayer
-from python.world import World
+from python.world import World, gen_empty_board
 from python.game import Game
+from python.coordinate import Coordinate
 import python.config as config
 
 logger = logging.getLogger(__name__)
@@ -41,14 +42,6 @@ def get_input() -> str:
 
 
 def space_to_char(space: Entity):
-    # TODO: I don't like that spaces are lists
-    #   There should only ever really be a single
-    #   entity in a space at the end of a tick.
-    #   Not sure the best way to represent this?
-    #   I guess maybe there could be a temp board each tick.
-    #   That stores lists.
-    #   After the tick happens there should only be a single
-    #   entity in each space.
     return ENTITY_TO_CHAR[space.__class__]
 
 
@@ -101,4 +94,20 @@ def render_game(game: Game):
 
 
 def load_board(filename: str) -> List[List[Entity]]:
-    pass
+    board_str = ""
+    with open(filename, "r") as f:
+        board_str = f.read().strip()
+
+    row_list = board_str.split("\n")
+    y_size = len(row_list)
+    x_size = len(row_list[0])
+
+    board = gen_empty_board(Coordinate(x_size, y_size))
+    logger.debug(f"Empty board size x: {len(board)}, y: {len(board[0])}")
+    for yidx, row in enumerate(reversed(row_list)):
+        logger.debug(f"Row: '{row}', len: {len(row)}")
+        for xidx, char in enumerate(row):
+            logger.debug(f"Loading char: {char}, xidx: {xidx}, yidx: {yidx}")
+            board[xidx][yidx] = CHAR_TO_ENTITY[char]()
+
+    return board
