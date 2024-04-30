@@ -1,21 +1,21 @@
 import pytest
 
 from python.coordinate import Coordinate
-from python.world import gen_empty_board, World
+from python.world import World
 from python.entity import Player
 
 
 def test_gen_empty_board():
     with pytest.raises(ValueError):
-        gen_empty_board(Coordinate(0, 0))
+        World.gen_empty_board(Coordinate(0, 0))
 
-    assert gen_empty_board(Coordinate(2, 1)) == [[None], [None]]
+    assert World.gen_empty_board(Coordinate(2, 1)) == [[set()], [set()]]
 
 
 def test_world__init__():
     # TODO: Make better?
     world = World(Coordinate(2, 2))
-    assert world.board == [[None, None], [None, None]]
+    assert world.board == [[set(), set()], [set(), set()]]
 
 
 def test_world_move_entity():
@@ -30,7 +30,7 @@ def test_place_entity():
 
     world.place_dynamic_entity(player, Coordinate(1, 1))
     assert world.board == [
-        [None, None, None],
-        [None, player, None],
-        [None, None, None],
+        [set(), set(), set()],
+        [set(), {player}, set()],
+        [set(), set(), set()],
     ]

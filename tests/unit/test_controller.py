@@ -11,7 +11,7 @@ from python.controller import (
 )
 from python.coordinate import Coordinate
 from python.game import Game
-from python.world import World, gen_empty_board
+from python.world import World
 from python.entity import Wall, Player, SmallDot
 from python.config import RENDER_FILE
 
@@ -23,16 +23,16 @@ def test_space_to_char():
 
 def test_world_to_string():
     world = World()
-    world.board = gen_empty_board(Coordinate(4, 1))
+    world.board = World.gen_empty_board(Coordinate(4, 1))
     assert world_to_string(world) == "....\n"
 
-    world.board = [[Wall()], [None], [Wall()], [None]]
+    world.board = [[{Wall()}], [set()], [{Wall()}], [set()]]
     assert world_to_string(world) == "X.X.\n"
 
-    world.board = [[Wall(), None, Wall(), None]]
+    world.board = [[{Wall()}, set(), {Wall()}, set()]]
     assert world_to_string(world) == ".\nX\n.\nX\n"
 
-    world.board = [[Wall(), None, None, None]]
+    world.board = [[{Wall()}, set(), set(), set()]]
     assert world_to_string(world) == ".\n.\n.\nX\n"
 
 
@@ -47,7 +47,7 @@ def test_render_world(pytester):
         result = f.read()
     assert result == "..\n..\n"
 
-    world.board = [[Wall(), Wall()], [Wall(), Wall()]]
+    world.board = [[{Wall()}, {Wall()}], [{Wall()}, {Wall()}]]
     render_world(world)
     with open(world_file, "r") as f:
         result = f.read()
@@ -63,7 +63,7 @@ def test_render_gameover(pytester):
     with pytest.raises(IndexError):
         render_gameover(game)
 
-    world.board = gen_empty_board(Coordinate(10, 1))
+    world.board = World.gen_empty_board(Coordinate(10, 1))
     render_gameover(game)
     with open(world_file, "r") as f:
         result = f.read()
@@ -91,9 +91,9 @@ def test_load_board(pytester):
 
     board = load_board(world_file)
 
-    assert isinstance(board[0][0], Player)
-    assert isinstance(board[1][0], Wall)
-    assert board[2][0] is None
-    assert board[0][1] is None
-    assert isinstance(board[1][1], SmallDot)
-    assert board[2][1] is None
+    assert isinstance(list(board[0][0])[0], Player)
+    assert isinstance(list(board[1][0])[0], Wall)
+    assert list(board[2][0])[0] is None
+    assert list(board[0][1])[0] is None
+    assert isinstance(list(board[1][1])[0], SmallDot)
+    assert list(board[2][1])[0] is None

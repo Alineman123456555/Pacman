@@ -16,7 +16,7 @@ from python.entity import (
     EatModePlayer,
     DynamicEntity,
 )
-from python.world import World, gen_empty_board
+from python.world import World
 from python.game import Game
 from python.coordinate import Coordinate
 import python.config as config
@@ -32,7 +32,7 @@ ENTITY_TO_CHAR: Dict[Entity, str] = {
     EatModePlayer: "0",
 }
 
-CHAR_TO_ENTITY: Dict[Entity, str] = {
+CHAR_TO_ENTITY: Dict[str, Entity] = {
     ".": type(None),
     "X": Wall,
     "O": Player,
@@ -53,6 +53,16 @@ def space_to_char(space: Entity):
     return ENTITY_TO_CHAR[space.__class__]
 
 
+CHAR_PRIORITY: Dict[str, int] = {
+    ".": 0,
+    "X": 1000,
+    "O": 99,
+    "-": 50,
+    "G": 60,
+    "0": 100,
+}
+
+
 def world_to_string(world: World) -> str:
     # TODO: Probably move to World class
     # Yeah it would be nice for testing? Wait no?
@@ -61,7 +71,18 @@ def world_to_string(world: World) -> str:
     y_str_list = [""] * len(board[0])
     for column in board:
         for yidx, space in enumerate(reversed(column)):
-            y_str_list[yidx] += space_to_char(space)
+            # TODO: Refactor this 3rd loop. Something about how this renders overlaps I don't like
+            char = space_to_char(None)
+            for entity in space:
+                tmp = space_to_char(entity)
+
+                if CHAR_PRIORITY[tmp] > CHAR_PRIORITY[char]:
+                    # TODO: Improve how priority is stored/calculated
+                    #   can probably just use the ENTITY_TO_CHAR dict for this.
+                    #   order is deterministic so the order of ENTITY_TO_CHAR
+                    #   can determine the priority
+                    char = tmp
+            y_str_list[yidx] += char
 
     return "\n".join(y_str_list) + "\n"
 
@@ -110,7 +131,7 @@ def load_board(filename: str) -> List[List[Entity]]:
     y_size = len(row_list)
     x_size = len(row_list[0])
 
-    board = gen_empty_board(Coordinate(x_size, y_size))
+    board = World.gen_empty_board(Coordinate(x_size, y_size))
     logger.debug(f"Empty board size x: {len(board)}, y: {len(board[0])}")
     for yidx, row in enumerate(reversed(row_list)):
         logger.debug(f"Row: '{row}', len: {len(row)}")
@@ -119,6 +140,6 @@ def load_board(filename: str) -> List[List[Entity]]:
             entity = CHAR_TO_ENTITY[char]()
             if isinstance(entity, DynamicEntity):
                 entity.coords = Coordinate(xidx, yidx)
-            board[xidx][yidx] = entity
+            board[xidx][yidx] = {entity}
 
     return board

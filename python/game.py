@@ -10,7 +10,7 @@ from python.entity import (
     Interactable,
     Ghost,
 )
-from python.world import World, gen_empty_board
+from python.world import World
 from python.direction import Direction
 from python.coordinate import Coordinate
 import python.config as config
@@ -51,7 +51,7 @@ class Game:
             logger.warning(f"Unknown Direction Keybind: {input}")
 
         # All things move on this board first
-        tmp_board: List[List[Set[Entity]]] = gen_empty_board(
+        tmp_board: List[List[Set[Entity]]] = World.gen_empty_board(
             # TODO: Improve how this call works for generating a temp board :(
             Coordinate(len(self._world.board), len(self._world.board[0])),
             set().copy,
@@ -72,16 +72,17 @@ class Game:
         return 0
 
     def _move_entities(self, tmp_board: List[List[set[Entity]]]):
-        for old_coords, ent in World.enumerate_board(self._world.board):
-            logging.debug(f"Ent {ent}")
-            new_coords = old_coords
+        for old_coords, ent_set in World.enumerate_board(self._world.board):
+            for ent in ent_set:
+                # logger.debug(f"Ent {ent}")
+                new_coords = old_coords
 
-            if isinstance(ent, DynamicEntity):
-                new_coords = ent.gen_move(self._world.get_surroundings(old_coords))
-                if not self._is_valid_move(new_coords):
-                    logger.info(f"Can't move entity, to {new_coords}")
-                    new_coords = old_coords
-            tmp_board[new_coords.x][new_coords.y].add(ent)
+                if isinstance(ent, DynamicEntity):
+                    new_coords = ent.gen_move(self._world.get_surroundings(old_coords))
+                    if not self._is_valid_move(new_coords):
+                        logger.info(f"Can't move entity, to {new_coords}")
+                        new_coords = old_coords
+                tmp_board[new_coords.x][new_coords.y].add(ent)
 
     def _update_player_velocity(self, direction: Direction):
         self._player.direction = direction
@@ -93,10 +94,24 @@ class Game:
         """
         The only type of entity you can't move onto is a Wall
         """
-        if isinstance(self._world.get_entity(coord), Wall):
+        class_dict = self._space_to_class_entity_set_dict(
+            self._world.get_entities(coord)
+        )
+        if self._dict_has(class_dict, Wall):
             return False
         else:
             return True
+
+    def _space_to_class_entity_set_dict(
+        self,
+        entity_set: Set[Entity],
+    ) -> Dict[type, Set[Entity]]:
+        # TODO: Refactor to world class, actually a new Space class would be good
+        class_dict: Dict[type, Set[Entity]] = {}
+        for entity in entity_set:
+            class_dict.setdefault(entity.__class__, set())
+            class_dict[entity.__class__].add(entity)
+        return class_dict
 
     def _dict_has(
         self, entity_class_dict: Dict[type, Set[Entity]], class_type: type
@@ -119,12 +134,9 @@ class Game:
         return full_entity_set
 
     def _interact_entities(self, tmp_board: List[List[Set[Entity]]]):
-        for coords, entity_list in World.enumerate_board(tmp_board):
+        for coords, entity_set in World.enumerate_board(tmp_board):
             # Setup
-            class_dict: Dict[type, Set] = {}
-            for entity in entity_list:
-                class_dict.setdefault(entity.__class__, set())
-                class_dict[entity.__class__].add(entity)
+            class_dict = self._space_to_class_entity_set_dict(entity_set)
 
             # Player Interactable interaction
             if self._dict_has(class_dict, Interactable) and self._dict_has(
@@ -133,6 +145,7 @@ class Game:
                 interactable: Interactable
                 for interactable in self._dict_get(class_dict, Interactable):
                     self._score += interactable.value
+                    # TODO: Remove interactable after interaction.
 
             # Player Ghost interaction
             if self._dict_has(class_dict, Ghost) and self._dict_has(class_dict, Player):
@@ -144,9 +157,12 @@ class Game:
 
         # TODO: Add game logic for entity interactions
 
-    def _update_world(self, tmp_board):
-        for coords, entity_list in World.enumerate_board(tmp_board):
-            for entity in entity_list:
+    def _update_world(self, tmp_board: List[List[Set[Entity]]]):
+        # TODO: Figure out if there's a good way to
+        #   Just update the world with a new board.
+        # self._world.board = tmp_board
+        for coords, entity_set in World.enumerate_board(tmp_board):
+            for entity in entity_set:
                 if isinstance(entity, DynamicEntity):
                     self._world.move_dynamic_entity(
                         entity, Coordinate(coords.x, coords.y)
