@@ -1,6 +1,7 @@
 import pytest
 import os
 
+from python.Cell import Cell
 from python.controller import (
     entity_to_char,
     world_to_string,
@@ -11,7 +12,7 @@ from python.controller import (
 )
 from python.coordinate import Coordinate
 from python.game import Game
-from python.world import World, Cell
+from python.world import World
 from python.entity import Wall, Player, SmallDot
 from python.config import RENDER_FILE
 

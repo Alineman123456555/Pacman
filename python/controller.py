@@ -15,8 +15,9 @@ from python.entity import (
     DumbGhost,
     EatModePlayer,
     DynamicEntity,
+    Cell,
 )
-from python.world import World, Cell
+from python.world import World
 from python.game import Game
 from python.coordinate import Coordinate
 import python.config as config

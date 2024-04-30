@@ -1,8 +1,9 @@
 import logging
-from abc import ABC, abstractmethod
-from typing import Tuple, List
-from python.coordinate import Coordinate
 
+from abc import ABC, abstractmethod
+from typing import Set, Tuple, Dict
+
+from python.coordinate import Coordinate
 from python.direction import Direction
 
 logger = logging.getLogger(__name__)
@@ -12,20 +13,84 @@ class Entity(ABC):
     pass
 
 
+class Cell:
+    """Stores entities at each spot in the worlds 2d array
+
+    The entities are stored in a dictionary that maps
+    Class type to a set of entities that are that type.
+    This makes it easier to grab specific sets of entities in a
+    Cell when doing various interactions.
+    """
+
+    def __init__(self):
+        self._entity_dict: Dict[type, Set[Entity]] = {}
+
+    def add_entity(self, entity: Entity) -> "Cell":
+        self._entity_dict.setdefault(entity.__class__, set())
+        self._entity_dict[entity.__class__].add(entity)
+        return self
+
+    def remove_entity(self, entity: Entity) -> "Cell":
+        try:
+            entity_set = self._entity_dict[entity.__class__]
+            entity_set.remove(entity)
+            if len(entity_set) == 0:
+                logger.debug(f"Empty entity_set removing class: {entity.__class__}")
+                self._entity_dict.pop(entity.__class__)
+        except KeyError:
+            # TODO: Don't know if this error should actually be returned
+            logger.error(
+                f"Tried deleting an entity that was not in this cell entity: {entity}"
+                f"_entity_dict: {self._entity_dict}"
+            )
+        return self
+
+    def get_all(self) -> Set[Entity]:
+        all_ents = set()
+        for ents in self._entity_dict.values():
+            all_ents.update(ents)
+        return all_ents
+
+    def is_empty(self) -> bool:
+        if self._entity_dict:
+            return False
+        return True
+
+    def has_class(self, class_type: type) -> bool:
+        if class_type in self._entity_dict.keys():
+            return True
+        return False
+
+    def has_subclass(self, class_type: type) -> bool:
+        for entity_class in self._entity_dict.keys():
+            if issubclass(entity_class, class_type):
+                return True
+        return False
+
+    def get_class_set(self, class_type: type) -> Set[Entity]:
+        """Gets set of all entities that match class"""
+        try:
+            return self._entity_dict[class_type]
+        except KeyError:
+            # TODO: Don't know if this error should actually be returned
+            logger.error(f"No class_type: {class_type}, " f"stored in Cell: {self}")
+            return set()
+
+    def get_subclass_set(self, class_type: type) -> Set[Entity]:
+        """Gets set of all entities and children type"""
+        full_entity_set = set()
+        for entity_class, entity_set in self._entity_dict.items():
+            if issubclass(entity_class, class_type):
+                full_entity_set.update(entity_set)
+        return full_entity_set
+
+
 class DynamicEntity(Entity):
     def __init__(self):
         self.coords: Coordinate = None
 
     @abstractmethod
-    def gen_move(
-        self,
-        surroundings: Tuple[
-            Entity,
-            Entity,
-            Entity,
-            Entity,
-        ],
-    ) -> Coordinate:
+    def gen_move(self, surroundings: Dict[Direction, "Cell"]) -> Coordinate:
         """Generates a move
 
         Parameters
@@ -51,15 +116,7 @@ class Player(DynamicEntity):
     # Maybe I should just init entities at (0, 0)
     # or just add a coord to the init
 
-    def gen_move(
-        self,
-        surroundings: Tuple[
-            Entity,
-            Entity,
-            Entity,
-            Entity,
-        ],
-    ) -> Coordinate:
+    def gen_move(self, surroundings: Dict[Direction, "Cell"]) -> Coordinate:
         # TODO: Figure out if you need to use surroundsing to generate the move.
         return self.coords + self.direction.value
 
@@ -99,24 +156,24 @@ class DumbGhost(Ghost):
         self.direction: Direction = direction
         self.coords: Coordinate = coords
 
-    def gen_move(
-        self,
-        surroundings: Tuple[
-            Entity,
-            Entity,
-            Entity,
-            Entity,
-        ],
-    ) -> Coordinate:
+    def gen_move(self, surroundings: Dict[Direction, "Cell"]) -> Coordinate:
         # TODO: make logic check all 4 direction no matter what the starting direction is.
-        right, left, up, down = surroundings
-        if self.direction == Direction.RIGHT and isinstance(right, Wall):
+        # TODO: Fix formatting probably refactor this check to a function.
+        if self.direction == Direction.RIGHT and surroundings[
+            Direction.RIGHT
+        ].has_class(Wall):
             self.direction = Direction.DOWN
-        if self.direction == Direction.DOWN and isinstance(down, Wall):
+        if self.direction == Direction.DOWN and surroundings[Direction.DOWN].has_class(
+            Wall
+        ):
             self.direction = Direction.LEFT
-        if self.direction == Direction.LEFT and isinstance(left, Wall):
+        if self.direction == Direction.LEFT and surroundings[Direction.LEFT].has_class(
+            Wall
+        ):
             self.direction = Direction.UP
-        if self.direction == Direction.UP and isinstance(up, Wall):
+        if self.direction == Direction.UP and surroundings[Direction.UP].has_class(
+            Wall
+        ):
             self.direction = Direction.RIGHT
 
         return self.coords + self.direction.value

@@ -1,6 +1,6 @@
 import logging
-from typing import Dict, List, Set
 
+from typing import Dict, List, Set
 
 from python.entity import (
     Entity,
@@ -51,38 +51,31 @@ class Game:
             logger.warning(f"Unknown Direction Keybind: {input}")
 
         # All things move on this board first
-        tmp_board: List[List[Set[Entity]]] = World.gen_empty_board(
-            # TODO: Improve how this call works for generating a temp board :(
-            Coordinate(len(self._world.board), len(self._world.board[0])),
-            set().copy,
-        )
+        temp_world = World(self._world.size)
 
         # Move all Entities
-        self._move_entities(tmp_board)
+        self._move_entities(temp_world)
 
         # Perform actions for entities on same spot
-        self._interact_entities(tmp_board)
+        # self._interact_entities(temp_world)
 
         # Update board
-        self._update_world(tmp_board)
+        self._update_world(temp_world)
         if not self._player:
             logger.error("No player!")
             # TODO: Add respawn
             return 1
         return 0
 
-    def _move_entities(self, tmp_board: List[List[set[Entity]]]):
-        for old_coords, ent_set in World.enumerate(self._world.board):
-            for ent in ent_set:
-                # logger.debug(f"Ent {ent}")
-                new_coords = old_coords
-
-                if isinstance(ent, DynamicEntity):
-                    new_coords = ent.gen_move(self._world.get_surroundings(old_coords))
-                    if not self._is_valid_move(new_coords):
-                        logger.info(f"Can't move entity, to {new_coords}")
-                        new_coords = old_coords
-                tmp_board[new_coords.x][new_coords.y].add(ent)
+    def _move_entities(self, temp_world: World):
+        for old_coords, cell in self._world.enumerate():
+            dyent: DynamicEntity
+            for dyent in cell.get_subclass_set(DynamicEntity):
+                new_coords = dyent.gen_move(self._world.get_surroundings(old_coords))
+                if not self._is_valid_move(new_coords):
+                    logger.info(f"Can't move entity, to {new_coords}")
+                    new_coords = old_coords
+                temp_world.add_entity(dyent, new_coords)
 
     def _update_player_velocity(self, direction: Direction):
         self._player.direction = direction
@@ -94,13 +87,10 @@ class Game:
         """
         The only type of entity you can't move onto is a Wall
         """
-        class_dict = self._space_to_class_entity_set_dict(
-            self._world.get_entities(coord)
-        )
-        if self._dict_has(class_dict, Wall):
+        cell = self._world.get_cell(coord)
+        if cell.has_class(Wall):
             return False
-        else:
-            return True
+        return True
 
     def _space_to_class_entity_set_dict(
         self,
@@ -157,13 +147,10 @@ class Game:
 
         # TODO: Add game logic for entity interactions
 
-    def _update_world(self, tmp_board: List[List[Set[Entity]]]):
+    def _update_world(self, temp_world: World):
         # TODO: Figure out if there's a good way to
         #   Just update the world with a new board.
         # self._world.board = tmp_board
-        for coords, entity_set in World.enumerate(tmp_board):
-            for entity in entity_set:
-                if isinstance(entity, DynamicEntity):
-                    self._world.move_dynamic_entity(
-                        entity, Coordinate(coords.x, coords.y)
-                    )
+        for coords, cell in temp_world.enumerate():
+            for dyent in cell.get_subclass_set(DynamicEntity):
+                self._world.move_dynamic_entity(dyent, coords)

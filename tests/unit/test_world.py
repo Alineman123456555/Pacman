@@ -1,7 +1,8 @@
 import pytest
 
+from python.Cell import Cell
 from python.coordinate import Coordinate
-from python.world import World, Cell
+from python.world import World
 from python.entity import Player, Entity, DumbGhost, Wall, Ghost
 
 
