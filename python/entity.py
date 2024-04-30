@@ -15,9 +15,8 @@ class Entity(ABC):
 class DynamicEntity(Entity):
     def __init__(self):
         self.coords: Coordinate = None
-        # TODO: Add world coords.
-        raise NotImplementedError
 
+    @abstractmethod
     def gen_move(
         self,
         surroundings: Tuple[
