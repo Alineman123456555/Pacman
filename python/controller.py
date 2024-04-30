@@ -16,7 +16,7 @@ from python.entity import (
     EatModePlayer,
     DynamicEntity,
 )
-from python.world import World
+from python.world import World, Cell
 from python.game import Game
 from python.coordinate import Coordinate
 import python.config as config
@@ -49,8 +49,8 @@ def get_input() -> str:
     return msvcrt.getch().decode()
 
 
-def space_to_char(space: Entity):
-    return ENTITY_TO_CHAR[space.__class__]
+def entity_to_char(ent: Entity):
+    return ENTITY_TO_CHAR[ent.__class__]
 
 
 CHAR_PRIORITY: Dict[str, int] = {
@@ -69,19 +69,22 @@ def world_to_string(world: World) -> str:
     board = world.board
 
     y_str_list = [""] * len(board[0])
+    logger.debug(f"board: {board}")
     for column in board:
-        for yidx, space in enumerate(reversed(column)):
+        logger.debug(f"column: {column}")
+        for yidx, cell in enumerate(reversed(column)):
             # TODO: Refactor this 3rd loop. Something about how this renders overlaps I don't like
-            char = space_to_char(None)
-            for entity in space:
-                tmp = space_to_char(entity)
-
-                if CHAR_PRIORITY[tmp] > CHAR_PRIORITY[char]:
+            char = entity_to_char(None)
+            logger.debug(f"Cell: {cell}")
+            for ent in cell.get_all():
+                temp = entity_to_char(ent)
+                if CHAR_PRIORITY[temp] > CHAR_PRIORITY[char]:
                     # TODO: Improve how priority is stored/calculated
                     #   can probably just use the ENTITY_TO_CHAR dict for this.
                     #   order is deterministic so the order of ENTITY_TO_CHAR
                     #   can determine the priority
-                    char = tmp
+                    char = temp
+
             y_str_list[yidx] += char
 
     return "\n".join(y_str_list) + "\n"
@@ -122,7 +125,10 @@ def render_game(game: Game):
         f.write(f"Score: {game._score}\n")
 
 
-def load_board(filename: str) -> List[List[Entity]]:
+def load_board(filename: str) -> List[List[Cell]]:
+    # TODO: Probably should have this function return a world.
+    #   Board and world have sorta been used interchangably throughout
+    #   this project.
     board_str = ""
     with open(filename, "r") as f:
         board_str = f.read().strip()
@@ -138,8 +144,9 @@ def load_board(filename: str) -> List[List[Entity]]:
         for xidx, char in enumerate(row):
             logger.debug(f"Loading char: {char}, xidx: {xidx}, yidx: {yidx}")
             entity = CHAR_TO_ENTITY[char]()
-            if isinstance(entity, DynamicEntity):
-                entity.coords = Coordinate(xidx, yidx)
-            board[xidx][yidx] = {entity}
+            if entity:  # TODO: I don't like this. idk.
+                if isinstance(entity, DynamicEntity):
+                    entity.coords = Coordinate(xidx, yidx)
+                board[xidx][yidx].add_entity(entity)
 
     return board

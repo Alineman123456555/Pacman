@@ -1,5 +1,5 @@
 import logging
-from typing import List, Tuple, Set, Callable, Generator, Dict
+from typing import List, Tuple, Set, Callable, Generator, Dict, Iterable
 from python.coordinate import Coordinate
 
 from python.entity import Entity, DynamicEntity, Wall, Player
@@ -20,11 +20,12 @@ class Cell:
     def __init__(self):
         self._entity_dict: Dict[type, Set[Entity]] = {}
 
-    def add_entity(self, entity: Entity):
+    def add_entity(self, entity: Entity) -> "Cell":
         self._entity_dict.setdefault(entity.__class__, set())
         self._entity_dict[entity.__class__].add(entity)
+        return self
 
-    def remove_entity(self, entity: Entity) -> None:
+    def remove_entity(self, entity: Entity) -> "Cell":
         try:
             entity_set = self._entity_dict[entity.__class__]
             entity_set.remove(entity)
@@ -37,6 +38,18 @@ class Cell:
                 f"Tried deleting an entity that was not in this cell entity: {entity}"
                 f"_entity_dict: {self._entity_dict}"
             )
+        return self
+
+    def get_all(self) -> Set[Entity]:
+        all_ents = set()
+        for ents in self._entity_dict.values():
+            all_ents.update(ents)
+        return all_ents
+
+    def is_empty(self) -> bool:
+        if self._entity_dict:
+            return False
+        return True
 
     def has_class(self, class_type: type) -> bool:
         if class_type in self._entity_dict.keys():
@@ -76,44 +89,60 @@ class World:
         """
         Bottom left is the start of the board.
         """
-        self.board: List[List[Set[Entity]]] = World.gen_empty_board(size)
+        self.board: List[List[Cell]] = World.gen_empty_board(size)
 
-    def get_surroundings(self, coord: Coordinate):
-        """Returns entities at RIGHT, LEFT, UP, DOWN"""
-        return (
-            self.get_entities(coord + Direction.RIGHT.value),
-            self.get_entities(coord + Direction.LEFT.value),
-            self.get_entities(coord + Direction.UP.value),
-            self.get_entities(coord + Direction.DOWN.value),
-        )
+    def get_surroundings(self, coord: Coordinate) -> Dict[Direction, Cell]:
+        """Returns cells at RIGHT, LEFT, UP, DOWN"""
+        return {
+            Direction.RIGHT: self.get_cell(coord + Direction.RIGHT.value),
+            Direction.LEFT: self.get_cell(coord + Direction.LEFT.value),
+            Direction.UP: self.get_cell(coord + Direction.UP.value),
+            Direction.DOWN: self.get_cell(coord + Direction.DOWN.value),
+        }
 
-    def get_entities(self, coord: Coordinate) -> Set[Entity]:
+    def get_cell(self, coord: Coordinate) -> Cell:
+        # TODO: Figure out if you really need this.
         return self.board[coord.x][coord.y]
 
+    def add_entity(self, entity: Entity, coord: Coordinate):
+        # TODO: Figure out if you really need this
+        self.board[coord.x][coord.y].add_entity(entity)
+
     def place_dynamic_entity(self, entity: DynamicEntity, coord: Coordinate):
-        self.board[coord.x][coord.y].add(entity)
+        # TODO: Maybe remove the coord stuff
+        #   But I feel this is a nice optimization b/c DynamicEntities
+        #   Are touched frequently
+        #   Could also have this take a generic entity and try to set the coords.
+        #   and handle the attribute error.
+        self.add_entity(entity, coord)
         entity.coords = coord
 
-    def remove_entity(self, entity: DynamicEntity):
+    def remove_dynamic_entity(self, entity: DynamicEntity):
+        # TODO: Maybe remove the coord stuff
         coord = entity.coords
-        self.board[coord.x][coord.y].remove(entity)
+        self.board[coord.x][coord.y].remove_entity(entity)
 
     def move_dynamic_entity(self, entity: DynamicEntity, new_coords: Coordinate):
         logger.debug(f"Moving entity to coords: {new_coords}")
-        self.remove_entity(entity)
+        self.remove_dynamic_entity(entity)
         self.place_dynamic_entity(entity, new_coords)
 
     def find_player(self) -> Player:
         """Finds the first player in the board"""
-        for _, entity_list in World.enumerate_board(self.board):
+        for _, entity_list in World.enumerate(self.board):
             for entity in entity_list:
                 if isinstance(entity, Player):
                     return entity
 
+    def enumerate(self) -> Generator[Tuple[Coordinate, Cell], None, None]:
+        for x, row in enumerate(self.board):
+            for y, cell in enumerate(row):
+                # for entity in entity_set:
+                if not cell.is_empty():
+                    yield (Coordinate(x, y), cell)
+
     @classmethod
-    def gen_empty_board(
-        cls, size: Coordinate, default_entity: Callable[[], Entity] = lambda: []
-    ):
+    def gen_empty_board(cls, size: Coordinate) -> List[List[Cell]]:
         # TODO: Refactor so this is cleaner :(
         #   I don't like how the default_entity is created
         #   Maybe call it a default_entity generator? (factory???)
@@ -122,14 +151,4 @@ class World:
             raise ValueError(
                 f"gen_empty_board size must be greater than 0, size {size}"
             )
-        return [[set(default_entity()) for _ in range(size.y)] for _ in range(size.x)]
-
-    @classmethod
-    def enumerate_board(
-        cls, board: List[List[Set[Entity]]]
-    ) -> Generator[Tuple[Coordinate, Set[Entity]], None, None]:
-        for x, row in enumerate(board):
-            for y, entity_set in enumerate(row):
-                # for entity in entity_set:
-                if entity_set:
-                    yield (Coordinate(x, y), entity_set)
+        return [[Cell() for _ in range(size.y)] for _ in range(size.x)]

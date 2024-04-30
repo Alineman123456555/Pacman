@@ -2,7 +2,7 @@ import pytest
 import os
 
 from python.controller import (
-    space_to_char,
+    entity_to_char,
     world_to_string,
     render_world,
     render_gameover,
@@ -11,35 +11,45 @@ from python.controller import (
 )
 from python.coordinate import Coordinate
 from python.game import Game
-from python.world import World
+from python.world import World, Cell
 from python.entity import Wall, Player, SmallDot
 from python.config import RENDER_FILE
 
 
-def test_space_to_char():
-    assert space_to_char(Wall()) == "X"
-    assert space_to_char(None) == "."
+def test_entity_to_char():
+    assert entity_to_char(Wall()) == "X"
+    assert entity_to_char(None) == "."
 
 
-def test_world_to_string():
+@pytest.fixture
+def cells():
+    return {Wall: Cell().add_entity(Wall()), Cell: Cell()}
+
+
+def test_world_to_string(cells):
     world = World()
     world.board = World.gen_empty_board(Coordinate(4, 1))
     assert world_to_string(world) == "....\n"
 
-    world.board = [[{Wall()}], [set()], [{Wall()}], [set()]]
+    wall = cells[Wall]
+    cell = cells[Cell]
+    world.board = [[wall], [cell], [wall], [cell]]
     assert world_to_string(world) == "X.X.\n"
 
-    world.board = [[{Wall()}, set(), {Wall()}, set()]]
+    world.board = [[wall, cell, wall, cell]]
     assert world_to_string(world) == ".\nX\n.\nX\n"
 
-    world.board = [[{Wall()}, set(), set(), set()]]
+    world.board = [[wall, cell, cell, cell]]
     assert world_to_string(world) == ".\n.\n.\nX\n"
 
 
-def test_render_world(pytester):
+def test_render_world(pytester, cells):
     tempdir = pytester.path
     os.chdir(tempdir)
     world_file = os.path.abspath(RENDER_FILE)
+
+    wall = cells[Wall]
+    cell = cells[Cell]
 
     world = World(Coordinate(2, 2))
     render_world(world)
@@ -47,7 +57,7 @@ def test_render_world(pytester):
         result = f.read()
     assert result == "..\n..\n"
 
-    world.board = [[{Wall()}, {Wall()}], [{Wall()}, {Wall()}]]
+    world.board = [[wall, wall], [wall, wall]]
     render_world(world)
     with open(world_file, "r") as f:
         result = f.read()
@@ -88,12 +98,14 @@ def test_load_board(pytester):
     world_file = os.path.join(tempdir, "world_file.txt")
     with open(world_file, "w") as f:
         f.write(".-.\n" "OX.\n")
+    # ".-."
+    # "OX."
 
     board = load_board(world_file)
 
-    assert isinstance(list(board[0][0])[0], Player)
-    assert isinstance(list(board[1][0])[0], Wall)
-    assert list(board[2][0])[0] is None
-    assert list(board[0][1])[0] is None
-    assert isinstance(list(board[1][1])[0], SmallDot)
-    assert list(board[2][1])[0] is None
+    assert board[0][0].has_class(Player)
+    assert board[1][0].has_class(Wall)
+    assert board[1][1].has_class(SmallDot)
+    assert board[2][0].is_empty()
+    assert board[0][1].is_empty()
+    assert board[2][1].is_empty()

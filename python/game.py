@@ -72,7 +72,7 @@ class Game:
         return 0
 
     def _move_entities(self, tmp_board: List[List[set[Entity]]]):
-        for old_coords, ent_set in World.enumerate_board(self._world.board):
+        for old_coords, ent_set in World.enumerate(self._world.board):
             for ent in ent_set:
                 # logger.debug(f"Ent {ent}")
                 new_coords = old_coords
@@ -134,7 +134,7 @@ class Game:
         return full_entity_set
 
     def _interact_entities(self, tmp_board: List[List[Set[Entity]]]):
-        for coords, entity_set in World.enumerate_board(tmp_board):
+        for coords, entity_set in World.enumerate(tmp_board):
             # Setup
             class_dict = self._space_to_class_entity_set_dict(entity_set)
 
@@ -161,7 +161,7 @@ class Game:
         # TODO: Figure out if there's a good way to
         #   Just update the world with a new board.
         # self._world.board = tmp_board
-        for coords, entity_set in World.enumerate_board(tmp_board):
+        for coords, entity_set in World.enumerate(tmp_board):
             for entity in entity_set:
                 if isinstance(entity, DynamicEntity):
                     self._world.move_dynamic_entity(
