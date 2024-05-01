@@ -108,6 +108,7 @@ def render_gameover(game: Game):
     x_len = len(game._world.board) + 1
     y_len = len(game._world.board[0])
     gameover = "Game over!"
+    # TODO: Math for placing gameover in the middle is not correct.
     start = (x_len * y_len // 2) + (y_len // 2) - len(gameover) // 2
     for idx, char in enumerate(gameover):
         world_str[idx + start] = char

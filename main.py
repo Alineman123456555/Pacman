@@ -9,7 +9,7 @@ from python.game import Game
 from python.controller import render_game, get_input, render_gameover, load_board
 import python.config as config
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 logger = logging.getLogger(__name__)
 

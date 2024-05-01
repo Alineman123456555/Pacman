@@ -56,6 +56,7 @@ class World:
         self.board[coord.x][coord.y].remove_entity(entity)
 
     def move_dynamic_entity(self, entity: DynamicEntity, new_coords: Coordinate):
+        # TODO: I think a lot of this code is not necessary.
         logger.debug(f"Moving entity to coords: {new_coords}")
         self.remove_dynamic_entity(entity)
         self.place_dynamic_entity(entity, new_coords)

@@ -44,23 +44,35 @@ class Game:
 
     def _tick(self, input) -> int:
         # Get input from controller (cli)
-        # Async??
+        # TODO: Make async
         try:
             self._update_player_velocity(DIRECTION_BINDS[input])
         except KeyError:
             logger.warning(f"Unknown Direction Keybind: {input}")
 
         # All things move on this board first
-        temp_world = World(self._world.size)
+        # TODO: Figure out if you need a temp_world,
+        #   now that each cell can store as many entities as it wants.
+        # temp_world = World(self._world.size)
 
         # Move all Entities
-        self._move_entities(temp_world)
+        # self._move_entities(temp_world)
+        # TODO: Right movement and up movement for the player now teleports
+        #   the players as far as possible.
+        # TODO: When ghost moves up he teleports up and right
+        #   then moves down one.
+        #   THIS ALL STARTED HAPPENING AFTER REMOVING THE TEMP WORLD.
+
+        self._move_entities(self._world)
 
         # Perform actions for entities on same spot
-        # self._interact_entities(temp_world)
+        self._interact_entities(self._world)
 
         # Update board
-        self._update_world(temp_world)
+        # self._update_world(temp_world)
+
+        # Check if game is over
+        # TODO: Refactor
         if not self._player:
             logger.error("No player!")
             # TODO: Add respawn
@@ -75,7 +87,9 @@ class Game:
                 if not self._is_valid_move(new_coords):
                     logger.info(f"Can't move entity, to {new_coords}")
                     new_coords = old_coords
-                temp_world.add_entity(dyent, new_coords)
+                temp_world.move_dynamic_entity(dyent, new_coords)
+                # TODO: Remove if temp_world is unneccessary
+                # temp_world.add_entity(dyent, new_coords)
 
     def _update_player_velocity(self, direction: Direction):
         self._player.direction = direction
@@ -92,58 +106,26 @@ class Game:
             return False
         return True
 
-    def _space_to_class_entity_set_dict(
-        self,
-        entity_set: Set[Entity],
-    ) -> Dict[type, Set[Entity]]:
-        # TODO: Refactor to world class, actually a new Space class would be good
-        class_dict: Dict[type, Set[Entity]] = {}
-        for entity in entity_set:
-            class_dict.setdefault(entity.__class__, set())
-            class_dict[entity.__class__].add(entity)
-        return class_dict
-
-    def _dict_has(
-        self, entity_class_dict: Dict[type, Set[Entity]], class_type: type
-    ) -> bool:
-        # TODO: Feel like this should get moved to a space class.
-        # TODO: Move to entity module
-        for entity_class in entity_class_dict.keys():
-            if issubclass(entity_class, class_type):
-                return True
-        return False
-
-    def _dict_get(
-        self, entity_class_dict: Dict[type, Set[Entity]], class_type: type
-    ) -> Set[Entity]:
-        # TODO: Feel like this should get moved to a space class.
-        full_entity_set = set()
-        for entity_class, entity_set in entity_class_dict.items():
-            if issubclass(entity_class, class_type):
-                full_entity_set.update(entity_set)
-        return full_entity_set
-
-    def _interact_entities(self, tmp_board: List[List[Set[Entity]]]):
-        for coords, entity_set in World.enumerate(tmp_board):
-            # Setup
-            class_dict = self._space_to_class_entity_set_dict(entity_set)
-
-            # Player Interactable interaction
-            if self._dict_has(class_dict, Interactable) and self._dict_has(
-                class_dict, Player
-            ):
-                interactable: Interactable
-                for interactable in self._dict_get(class_dict, Interactable):
-                    self._score += interactable.value
-                    # TODO: Remove interactable after interaction.
-
-            # Player Ghost interaction
-            if self._dict_has(class_dict, Ghost) and self._dict_has(class_dict, Player):
-                # TODO: Add player eat mode.
-                for player in self._dict_get(class_dict, Player):
-                    if player == self._player:
+    def _interact_entities(self, temp_world: World):
+        for coords, cell in temp_world.enumerate():
+            if cell.has_subclass(Player):
+                # Player, Interactable interaction
+                if cell.has_subclass(Interactable):
+                    # TODO: FIX THIS
+                    #   Currently temp_world doesn't include interactables -_-
+                    #   Maybe add copy constructor to world.
+                    #
+                    logger.info(f"Player, Interactable interaction")
+                    interactable: Interactable
+                    for interactable in cell.get_subclass_set(Interactable):
+                        self._score += interactable.value
+                        # TODO: Remove interactable after interaction
+                # Player, Ghost interaction
+                if cell.has_subclass(Ghost):
+                    logger.info(f"Player, Ghost interaction")
+                    for player in cell.get_subclass_set(Player):
                         self._player = None
-                        tmp_board[coords.x][coords.y].remove(player)
+                        temp_world.remove_dynamic_entity(player)
 
         # TODO: Add game logic for entity interactions
 
