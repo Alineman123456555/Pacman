@@ -149,6 +149,7 @@ def load_board(filename: str) -> List[List[Cell]]:
             if entity:  # TODO: I don't like this. idk.
                 if isinstance(entity, DynamicEntity):
                     entity.coords = Coordinate(xidx, yidx)
+                    entity.old_coords = Coordinate(xidx, yidx)
                 board[xidx][yidx].add_entity(entity)
 
     return board

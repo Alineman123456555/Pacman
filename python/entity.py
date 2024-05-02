@@ -86,8 +86,11 @@ class Cell:
 
 
 class DynamicEntity(Entity):
-    def __init__(self):
-        self.coords: Coordinate = None
+    def __init__(self, coord: Coordinate = None, direction: Direction = Direction.NONE):
+        self.coords: Coordinate = coord
+        self.direction: Direction = direction
+        self._last_tick: int = 0
+        self.old_coords: Coordinate = coord
 
     @abstractmethod
     def gen_move(self, surroundings: Dict[Direction, "Cell"]) -> Coordinate:
@@ -105,11 +108,14 @@ class DynamicEntity(Entity):
         # TODO: Refactor surroundings tuple to use a world singleton
         return NotImplementedError
 
+    def update_coords(self, new_coords: Coordinate):
+        self.old_coords = self.coords
+        self.coords = new_coords
+
 
 class Player(DynamicEntity):
     def __init__(self, coords: Coordinate = None):
-        self.direction: Direction = Direction.NONE
-        self.coords: Coordinate = coords
+        return super().__init__(coords)
 
     # TODO: Decide if getters and setters
     #   Makes it easier to avoid AttributeErrors
@@ -148,14 +154,13 @@ class EatModePlayer(Player):
 
 
 class Ghost(DynamicEntity):
+    def __init__(self, coord: Coordinate = None, direction: Direction = Direction.UP):
+        super().__init__(coord, direction)
+
     pass
 
 
 class DumbGhost(Ghost):
-    def __init__(self, direction: Direction = Direction.UP, coords: Coordinate = None):
-        self.direction: Direction = direction
-        self.coords: Coordinate = coords
-
     def gen_move(self, surroundings: Dict[Direction, "Cell"]) -> Coordinate:
         # TODO: make logic check all 4 direction no matter what the starting direction is.
         # TODO: Fix formatting probably refactor this check to a function.

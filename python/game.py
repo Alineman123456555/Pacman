@@ -9,6 +9,7 @@ from python.entity import (
     DynamicEntity,
     Interactable,
     Ghost,
+    Cell,
 )
 from python.world import World
 from python.direction import Direction
@@ -34,6 +35,7 @@ class Game:
         self._world = world
         self._score = 0
         self._player = None
+        self._tick_count = 0
 
     def add_player(self, player: Player, coord: Coordinate):
         self._world.place_dynamic_entity(player, coord)
@@ -56,20 +58,16 @@ class Game:
         # temp_world = World(self._world.size)
 
         # Move all Entities
-        # self._move_entities(temp_world)
+        self._move_entities()
         # TODO: Right movement and up movement for the player now teleports
         #   the players as far as possible.
         # TODO: When ghost moves up he teleports up and right
         #   then moves down one.
         #   THIS ALL STARTED HAPPENING AFTER REMOVING THE TEMP WORLD.
-
-        self._move_entities(self._world)
+        self._tick_count += 1
 
         # Perform actions for entities on same spot
-        self._interact_entities(self._world)
-
-        # Update board
-        # self._update_world(temp_world)
+        self._interact_entities()
 
         # Check if game is over
         # TODO: Refactor
@@ -79,17 +77,20 @@ class Game:
             return 1
         return 0
 
-    def _move_entities(self, temp_world: World):
+    def _move_entities(self):
         for old_coords, cell in self._world.enumerate():
             dyent: DynamicEntity
             for dyent in cell.get_subclass_set(DynamicEntity):
-                new_coords = dyent.gen_move(self._world.get_surroundings(old_coords))
-                if not self._is_valid_move(new_coords):
-                    logger.info(f"Can't move entity, to {new_coords}")
-                    new_coords = old_coords
-                temp_world.move_dynamic_entity(dyent, new_coords)
-                # TODO: Remove if temp_world is unneccessary
-                # temp_world.add_entity(dyent, new_coords)
+                logger.info(f"Moving dyent, coords: {old_coords}")
+                if dyent._last_tick < self._tick_count:
+                    new_coords = dyent.gen_move(
+                        self._world.get_surroundings(old_coords)
+                    )
+                    if not self._is_valid_move(new_coords):
+                        logger.info(f"Can't move entity, to {new_coords}")
+                        new_coords = old_coords
+                    self._world.move_dynamic_entity(dyent, new_coords)
+                    dyent._last_tick = self._tick_count
 
     def _update_player_velocity(self, direction: Direction):
         self._player.direction = direction
@@ -106,33 +107,52 @@ class Game:
             return False
         return True
 
-    def _interact_entities(self, temp_world: World):
-        for coords, cell in temp_world.enumerate():
-            if cell.has_subclass(Player):
-                # Player, Interactable interaction
-                if cell.has_subclass(Interactable):
-                    # TODO: FIX THIS
-                    #   Currently temp_world doesn't include interactables -_-
-                    #   Maybe add copy constructor to world.
-                    #
-                    logger.info(f"Player, Interactable interaction")
-                    interactable: Interactable
-                    for interactable in cell.get_subclass_set(Interactable):
-                        self._score += interactable.value
-                        # TODO: Remove interactable after interaction
+    def __check_current_and_old(self, dyent: DynamicEntity, class_type: type):
+        # TODO: Move to world.py
+        #   Is this too much logic for the world?
+        return self._world.get_cell(dyent.coords).has_subclass(
+            class_type
+        ) or self._world.get_cell(dyent.old_coords).has_subclass(class_type)
+
+    def __player_interactions(self, cell: Cell):
+        player: Player
+        for player in cell.get_subclass_set(Player):
+            logger.info(f"Found player for interactions")
+
+            # Player, Interactable interaction
+            interactable: Interactable
+            for interactable in cell.get_subclass_set(Interactable):
+                logger.info(f"Player, Interactable interaction")
+                self._score += interactable.value
+                cell.remove_entity(interactable)
+                # TODO: Make it so an interactable can do other things in the tick
+                #    Before being removed? Basically add it to a set of entities
+                #    that get removed at the end of _interact_entities
                 # Player, Ghost interaction
-                if cell.has_subclass(Ghost):
-                    logger.info(f"Player, Ghost interaction")
-                    for player in cell.get_subclass_set(Player):
-                        self._player = None
-                        temp_world.remove_dynamic_entity(player)
+                # TODO: Refactor player/ghost interaction
+
+            if self.__check_current_and_old(player, Ghost):
+                # TODO: Refactor this and below
+                logger.info(f"Player, Ghost interaction")
+                self._player = None
+                self._world.remove_dynamic_entity(player)
+
+    def __ghost_interactions(self, cell: Cell):
+        ghost: Ghost
+        for ghost in cell.get_subclass_set(Ghost):
+            if self.__check_current_and_old(ghost, Player):
+                # TODO: Refactor.
+                logger.info(f"Player, Ghost interaction")
+                self._player = None
+                # TODO: get rid of this for loop. Somehow it can be moved out of this :(
+                for player in cell.get_subclass_set(Player):
+                    self._world.remove_dynamic_entity(player)
+
+    def _interact_entities(self):
+        for coords, cell in self._world.enumerate():
+            pass
+            self.__player_interactions(cell)
+
+            self.__ghost_interactions(cell)
 
         # TODO: Add game logic for entity interactions
-
-    def _update_world(self, temp_world: World):
-        # TODO: Figure out if there's a good way to
-        #   Just update the world with a new board.
-        # self._world.board = tmp_board
-        for coords, cell in temp_world.enumerate():
-            for dyent in cell.get_subclass_set(DynamicEntity):
-                self._world.move_dynamic_entity(dyent, coords)

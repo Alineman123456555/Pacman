@@ -48,7 +48,7 @@ class World:
         #   Could also have this take a generic entity and try to set the coords.
         #   and handle the attribute error.
         self.add_entity(entity, coord)
-        entity.coords = coord
+        entity.update_coords(coord)
 
     def remove_dynamic_entity(self, entity: DynamicEntity):
         # TODO: Maybe remove the coord stuff
