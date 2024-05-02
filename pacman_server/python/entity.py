@@ -208,8 +208,50 @@ class SmallDot(Interactable):
         return 100
 
 
-class GhostSpawn(StaticEntity):
+class Fruit(Interactable):
+    @property
+    def value(self):
+        raise NotImplementedError
+
+
+class Cherry(Fruit):
+    @property
+    def value(self):
+        return 100
+
+
+class Strawberry(Fruit):
+    @property
+    def value(self):
+        return 300
+
+
+class Orange(Fruit):
+    @property
+    def value(self):
+        return 500
+
+
+class Apple(Fruit):
+    @property
+    def value(self):
+        return 700
+
+
+class Spawner(StaticEntity):
+    # TODO: Need to think more about handing how things spawn.
+    def __init__(self):
+        raise NotImplementedError
+
+
+class GhostSpawner(Spawner):
     # TODO: Decide if this should be an entity or stored seperately
     #   In the world class.
     def __init__(self):
+        raise NotImplementedError
+
+
+class FruitSpawner(Spawner):
+    # TODO: Implement
+    def __init__(self) -> None:
         raise NotImplementedError

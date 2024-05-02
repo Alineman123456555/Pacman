@@ -132,6 +132,10 @@ class Game:
                 # TODO: Refactor player/ghost interaction
 
             if self.__check_current_and_old(player, Ghost):
+                # TODO: Change it so the player can actually
+                #   escape from a ghost. So don't check the old spot.
+                #   Or check the old spot and then check if the ghost and
+                #   have specifically switched spots.
                 # TODO: Refactor this and below
                 logger.info(f"Player, Ghost interaction")
                 self._player = None
