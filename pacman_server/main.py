@@ -5,7 +5,8 @@ from fastapi import FastAPI, APIRouter
 
 from python.game import GAME
 from enum import Enum
-from pydantic import BaseModel, constr
+from typing_extensions import Annotated
+from pydantic import BaseModel, StringConstraints
 
 logging.basicConfig(level=logging.INFO)
 
@@ -18,14 +19,13 @@ v0_router = APIRouter(prefix="/v0")
 
 class Input(BaseModel):
     """Input is currently handled as a single character."""
-    char: constr(max_length=1)
+
+    char: Annotated[str, StringConstraints(max_length=1)]
 
 
 @v0_router.get("/world")
 def get_world():
-    return {
-        "game_text_list": GAME._world_to_string_list()
-    }
+    return {"game_text_list": GAME._world_to_string_list()}
 
 
 # TODO: Once persistence is added
