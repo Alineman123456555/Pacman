@@ -8,6 +8,9 @@
 		},
 		{
 			"path": "../cli_frontend"
+		},
+		{
+			"path": "../web_frontend"
 		}
 	],
 	"settings": {}
