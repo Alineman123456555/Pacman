@@ -6,7 +6,6 @@ from python.entity import Wall, Player, SmallDot, DumbGhost, EatModePlayer
 from python.world import World
 from python.direction import Direction
 from python.game import Game
-from python.controller import render_game, get_input, render_gameover, load_board
 import python.config as config
 
 logging.basicConfig(level=logging.INFO)
@@ -14,64 +13,46 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def create_wall(world: World, start: Coordinate, end: Coordinate):
-    logger.debug(f"Creating wall start: {start}, end: {end}")
-    for x in range(start.x, end.x + 1):
-        for y in range(start.y, end.y + 1):
-            logger.debug(f"Creating wall at x: {x}, y: {y}")
-            world.board[x][y] = Wall()
+def render_game(game: Game):
+    logger.info("Rendering game")
+    with open(config.RENDER_FILE, "w") as f:
+        f.write(game._world_to_string())
+        f.write(f"Score: {game._score}\n")
 
 
-def create_world():
-    # TODO: Move to world?
-    world = World(Coordinate(100, 40))
+def render_gameover(game: Game):
+    world_str = game._world_to_string()
 
-    # Left wall
-    create_wall(world, Coordinate(5, 5), Coordinate(5, 9))
+    # Overwrite chars with gameover
+    world_str = list(world_str)
+    x_len = len(game._world.board) + 1
+    y_len = len(game._world.board[0])
+    gameover = "Game over!"
+    # TODO: Math for placing gameover in the middle is not correct.
+    start = (x_len * y_len // 2) + (y_len // 2) - len(gameover) // 2
+    for idx, char in enumerate(gameover):
+        world_str[idx + start] = char
+    world_str = "".join(world_str)
 
-    # Right wall
-    create_wall(world, Coordinate(10, 5), Coordinate(10, 9))
-
-    # Bottom wall
-    create_wall(world, Coordinate(6, 5), Coordinate(9, 5))
-
-    # Top wall
-    create_wall(world, Coordinate(6, 9), Coordinate(9, 9))
-
-    world.board[3][7] = SmallDot()
-
-    return world
-
-
-def create_game():
-    # TODO: Move to game
-    # Build World
-    world = World()
-    world.board = load_board(config.WORLD_FILE)
-
-    # Create Game
-    game = Game(world)
-    game._player = world.find_player()
-
-    return game
+    # Render
+    with open(config.RENDER_FILE, "w") as f:
+        f.write(world_str)
+        f.write(f"Score: {game._score}\n")
 
 
-GAME = create_game()
+def get_input() -> str:
+    # TODO: update to use python.util.getch
+    import msvcrt
+
+    return msvcrt.getch().decode()
 
 
-def restart_game(game: Game = GAME):
-    # TODO: Move to Game class
-    #   And rename to something like
-    #   set_game_state?
-    game._world = create_world()
-    game.add_player(EatModePlayer(10), Coordinate(7, 8))
-    game.add_dynamic_entity(DumbGhost(Direction.UP), Coordinate(7, 7))
-    game._score = 0
+GAME = Game().load_game()
 
 
 NONGAME_BINDS = {
     config.QUIT: quit,
-    config.RESTART: restart_game,
+    config.RESTART: GAME.load_game,
 }
 
 
@@ -84,7 +65,7 @@ def play_game(game: Game):
         sleep(tick_time)
         input = get_input()
         try:
-            NONGAME_BINDS[input](game)
+            NONGAME_BINDS[input]()
         except KeyError:
             if game._tick(input) != 0:
                 game_over = True

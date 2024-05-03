@@ -10,6 +10,9 @@ from python.entity import (
     Interactable,
     Ghost,
     Cell,
+    SmallDot,
+    DumbGhost,
+    EatModePlayer,
 )
 from python.world import World
 from python.direction import Direction
@@ -29,13 +32,51 @@ DIRECTION_BINDS = {
     config.MOVE_RIGHT: Direction.RIGHT,
 }
 
+ENTITY_TO_CHAR: Dict[Entity, str] = {
+    type(None): ".",
+    Wall: "X",
+    Player: "O",
+    SmallDot: "-",
+    DumbGhost: "G",
+    EatModePlayer: "0",
+}
+
+CHAR_PRIORITY: Dict[str, int] = {
+    ".": 0,
+    "X": 1000,
+    "O": 99,
+    "-": 50,
+    "G": 60,
+    "0": 100,
+}
+
+CHAR_TO_ENTITY: Dict[str, Entity] = {
+    ".": type(None),
+    "X": Wall,
+    "O": Player,
+    "-": SmallDot,
+    "G": DumbGhost,
+    "0": EatModePlayer,
+}
+
 
 class Game:
+    # TODO: Rename to PacmanGame
+    #   Move generic class functions to an abstract class Game
     def __init__(self, world: World = World(Coordinate(1, 1))) -> None:
         self._world = world
         self._score = 0
         self._player = None
         self._tick_count = 0
+
+    def load_game(self):
+        # Build World
+        self._world.board = self._load_board(config.WORLD_FILE)
+
+        # Create Game
+        self._player = self._world.find_player()
+
+        return self
 
     def add_player(self, player: Player, coord: Coordinate):
         self._world.place_dynamic_entity(player, coord)
@@ -160,3 +201,70 @@ class Game:
             self.__ghost_interactions(cell)
 
         # TODO: Add game logic for entity interactions
+
+    @classmethod
+    def __entity_to_char(cls, ent: Entity):
+        # TODO: Move to a new class PacmanWorld
+        #   This new class just adds a few functions for rendering the game
+        #   that are unique to pacman.
+        return ENTITY_TO_CHAR[ent.__class__]
+
+    def _world_to_string(self) -> str:
+        """It might make sense to move this to the World class
+        But currently there's no good generic way to represent a world
+        as a string. This game "pacman" has its own special way.
+        That's why it is here.
+        """
+        # TODO: Maybe add to a layer between game and api?
+        # TODO: Probably move to World class
+        # Yeah it would be nice for testing? Wait no?
+        board = self._world.board
+
+        y_str_list = [""] * len(board[0])
+        logger.debug(f"board: {board}")
+        for column in board:
+            logger.debug(f"column: {column}")
+            for yidx, cell in enumerate(reversed(column)):
+                # TODO: Refactor this 3rd loop. Something about how this renders overlaps I don't like
+                char = Game.__entity_to_char(None)
+                logger.debug(f"Cell: {cell}")
+                for ent in cell.get_all():
+                    temp = Game.__entity_to_char(ent)
+                    if CHAR_PRIORITY[temp] > CHAR_PRIORITY[char]:
+                        # TODO: Improve how priority is stored/calculated
+                        #   can probably just use the ENTITY_TO_CHAR dict for this.
+                        #   order is deterministic so the order of ENTITY_TO_CHAR
+                        #   can determine the priority
+                        char = temp
+
+                y_str_list[yidx] += char
+
+        return "\n".join(y_str_list) + "\n"
+
+    def _load_board(self, filename: str) -> List[List[Cell]]:
+        # TODO: Move to PacmanWorld
+        # TODO: Probably should have this function return a world.
+        #   Board and world have sorta been used interchangably throughout
+        #   this project.
+        board_str = ""
+        with open(filename, "r") as f:
+            board_str = f.read().strip()
+
+        row_list = board_str.split("\n")
+        y_size = len(row_list)
+        x_size = len(row_list[0])
+
+        board = World.gen_empty_board(Coordinate(x_size, y_size))
+        logger.debug(f"Empty board size x: {len(board)}, y: {len(board[0])}")
+        for yidx, row in enumerate(reversed(row_list)):
+            logger.debug(f"Row: '{row}', len: {len(row)}")
+            for xidx, char in enumerate(row):
+                logger.debug(f"Loading char: {char}, xidx: {xidx}, yidx: {yidx}")
+                entity = CHAR_TO_ENTITY[char]()
+                if entity:  # TODO: I don't like this. idk.
+                    if isinstance(entity, DynamicEntity):
+                        entity.coords = Coordinate(xidx, yidx)
+                        entity.old_coords = Coordinate(xidx, yidx)
+                    board[xidx][yidx].add_entity(entity)
+
+        return board
