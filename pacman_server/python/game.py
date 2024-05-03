@@ -21,7 +21,6 @@ import python.config as config
 
 logger = logging.getLogger(__name__)
 
-
 # This class also tracks scoring and other random things like that
 
 
@@ -85,14 +84,14 @@ class Game:
     def add_dynamic_entity(self, entity: Entity, coord: Coordinate):
         self._world.place_dynamic_entity(entity, coord)
 
-    def _tick(self, input) -> int:
-        # Get input from controller (cli)
-        # TODO: Make async
+    def handle_input(self, input_str: str):
+        logger.info(f"Handing input: {input_str}")
         try:
-            self._update_player_velocity(DIRECTION_BINDS[input])
+            self._update_player_velocity(DIRECTION_BINDS[input_str])
         except KeyError:
-            logger.warning(f"Unknown Direction Keybind: {input}")
+            logger.warning(f"Unknown Direction Keybind: {input_str}")
 
+    def _tick(self) -> int:
         # All things move on this board first
         # TODO: Figure out if you need a temp_world,
         #   now that each cell can store as many entities as it wants.
@@ -209,7 +208,7 @@ class Game:
         #   that are unique to pacman.
         return ENTITY_TO_CHAR[ent.__class__]
 
-    def _world_to_string(self) -> str:
+    def _world_to_string_list(self) -> List[str]:
         """It might make sense to move this to the World class
         But currently there's no good generic way to represent a world
         as a string. This game "pacman" has its own special way.
@@ -238,8 +237,7 @@ class Game:
                         char = temp
 
                 y_str_list[yidx] += char
-
-        return "\n".join(y_str_list) + "\n"
+        return y_str_list
 
     def _load_board(self, filename: str) -> List[List[Cell]]:
         # TODO: Move to PacmanWorld

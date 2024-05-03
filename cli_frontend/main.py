@@ -5,15 +5,45 @@ Just to make sure the API works before spending time on the frontend.
 import logging
 import requests
 import urllib.parse
+import json
+from time import sleep
 
 import python.config as config
+
+logging.basicConfig(level=logging.INFO)
 
 logger = logging.getLogger(__name__)
 
 
 def get_world_string():
+    # TODO: Move to api module
     get_world = urllib.parse.urljoin(config.BASE_URL, config.GET_WORLD)
-    world_str = requests.get(get_world)
+    logger.info(f"Request url {get_world}")
+    world_str_list = requests.get(get_world).json()['game_text_list']
+    return "\n".join(world_str_list)
+
+
+def put_input(m_input: str):
+    # TODO: Move to api module
+    put_input_url = urllib.parse.urljoin(config.BASE_URL, config.PUT_INPUT)
+    logger.info(f"put_input: {m_input}")
+    # logger.info(f"Request url {put_input_url}")
+    requests.put(put_input_url, json={
+        "char": m_input
+    })
+
+
+def put_tick():
+    put_tick_url = urllib.parse.urljoin(config.BASE_URL, config.PUT_TICK)
+    logger.info(f"Request url {put_tick_url}")
+    requests.put(put_tick_url)
+
+
+def get_input() -> str:
+    # TODO: update to use python.util.getch
+    import msvcrt
+
+    return msvcrt.getch().decode()
 
 
 def render_game():
@@ -21,6 +51,28 @@ def render_game():
     with open(config.RENDER_FILE, "w") as f:
         f.write(get_world_string())
 
+
+def play_game():
+    """Helper that runs the main loop"""
+    game_over = False
+    tick_time = 0.5
+    while not game_over:
+        render_game()
+        sleep(tick_time)
+        m_input = get_input()
+        put_input(m_input)
+        put_tick()
+        # try:
+        #     NONGAME_BINDS[m_input]()
+        # except KeyError:
+        #     if game._tick(m_input) != 0:
+        #         game_over = True
+
+    # render_gameover(game)
+    exit(0)
+
+
+play_game()
 
 render_game()
 
@@ -52,39 +104,7 @@ render_game()
 #         f.write(world_str)
 #         f.write(f"Score: {game._score}\n")
 
-
-# def get_input() -> str:
-#     # TODO: update to use python.util.getch
-#     import msvcrt
-
-#     return msvcrt.getch().decode()
-
-
-# GAME = Game().load_game()
-
-
 # NONGAME_BINDS = {
 #     config.QUIT: quit,
 #     config.RESTART: GAME.load_game,
 # }
-
-
-# def play_game(game: Game):
-#     """Helper that runs the main loop"""
-#     game_over = False
-#     tick_time = 0.25
-#     while not game_over:
-#         render_game(game)
-#         sleep(tick_time)
-#         input = get_input()
-#         try:
-#             NONGAME_BINDS[input]()
-#         except KeyError:
-#             if game._tick(input) != 0:
-#                 game_over = True
-
-#     render_gameover(game)
-#     exit(0)
-
-
-# play_game(GAME)
