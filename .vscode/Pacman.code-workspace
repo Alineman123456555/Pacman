@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../pacman_server"
+		},
+		{
+			"path": "../cli_frontend"
+		}
+	],
+	"settings": {}
+}
