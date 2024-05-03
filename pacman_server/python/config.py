@@ -1,5 +1,4 @@
 # World file location
-RENDER_FILE = "./world.txt"
 WORLD_FILE = "./worlds/world_1.txt"
 
 # Game Binds

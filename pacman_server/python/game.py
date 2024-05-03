@@ -268,3 +268,6 @@ class Game:
                     board[xidx][yidx].add_entity(entity)
 
         return board
+
+
+GAME = Game().load_game()
